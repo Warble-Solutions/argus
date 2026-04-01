@@ -1,0 +1,66 @@
+.approvalList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.approvalCard {
+  padding: var(--space-5);
+}
+
+.approvalHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: var(--space-4);
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.approvalType {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.requester {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.roleBadge {
+  margin-left: var(--space-1);
+  font-size: 10px;
+}
+
+.approvalBody {
+  margin-bottom: var(--space-4);
+}
+
+.approvalTitle {
+  font-size: var(--text-lg);
+  font-weight: var(--weight-semibold);
+  margin-bottom: var(--space-2);
+}
+
+.approvalDesc {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  line-height: var(--leading-relaxed);
+}
+
+.stageInfo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+.approvalActions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-border);
+}

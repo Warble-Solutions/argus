@@ -1,0 +1,319 @@
+.statsSection {
+  margin-bottom: var(--space-8);
+}
+
+/* Content Grid */
+.contentGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-6);
+}
+
+/* Tasks Card */
+.tasksCard {
+  grid-column: 1;
+}
+
+.tasksList {
+  display: flex;
+  flex-direction: column;
+}
+
+.taskRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--color-border);
+  gap: var(--space-3);
+}
+
+.taskRow:last-child {
+  border-bottom: none;
+}
+
+.taskLeft {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.taskInfo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.taskTitle {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.taskMeta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.taskDeadline {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
+
+.taskDeadline.overdue {
+  color: var(--color-accent-red);
+}
+
+.taskDeadline.urgent {
+  color: var(--color-accent-amber);
+}
+
+/* Deadlines Card */
+.deadlinesCard {
+  grid-column: 2;
+}
+
+.deadlinesList {
+  display: flex;
+  flex-direction: column;
+}
+
+.deadlineItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--color-border);
+  text-decoration: none;
+  color: inherit;
+  transition: all var(--transition-fast);
+  gap: var(--space-3);
+}
+
+.deadlineItem:last-child {
+  border-bottom: none;
+}
+
+.deadlineItem:hover {
+  opacity: 0.85;
+}
+
+.deadlineLeft {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.deadlineIndicator {
+  width: 4px;
+  height: 100%;
+  min-height: 40px;
+  border-radius: var(--radius-full);
+  flex-shrink: 0;
+}
+
+.deadlineIndicator.overdue {
+  background: var(--color-accent-red);
+  box-shadow: 0 0 8px var(--color-accent-red-glow);
+}
+
+.deadlineIndicator.urgent {
+  background: var(--color-accent-amber);
+  box-shadow: 0 0 8px var(--color-accent-amber-glow);
+}
+
+.deadlineIndicator.upcoming {
+  background: var(--color-accent-blue);
+}
+
+.deadlineIndicator.safe {
+  background: var(--color-accent-emerald);
+}
+
+.deadlineInfo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.deadlineTitle {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--color-text-primary);
+}
+
+.deadlineMeta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.deadlineRight {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-shrink: 0;
+}
+
+.daysLabel {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  font-family: var(--font-mono);
+  white-space: nowrap;
+}
+
+.daysLabel.overdue {
+  color: var(--color-accent-red);
+}
+
+.daysLabel.urgent {
+  color: var(--color-accent-amber);
+}
+
+.daysLabel.upcoming {
+  color: var(--color-accent-blue);
+}
+
+.daysLabel.safe {
+  color: var(--color-accent-emerald);
+}
+
+/* Activity Card */
+.activityCard {
+  grid-column: 1;
+}
+
+.activityList {
+  display: flex;
+  flex-direction: column;
+}
+
+.activityItem {
+  display: flex;
+  gap: var(--space-3);
+}
+
+.activityTimeline {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+  padding-top: 4px;
+}
+
+.activityDot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+  background: var(--color-accent-blue);
+  flex-shrink: 0;
+}
+
+.activityLine {
+  width: 2px;
+  flex: 1;
+  background: var(--color-border);
+  margin-top: var(--space-1);
+  margin-bottom: var(--space-1);
+}
+
+.activityItem:last-child .activityLine {
+  display: none;
+}
+
+.activityContent {
+  padding-bottom: var(--space-4);
+}
+
+.activityHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-1);
+}
+
+.activityUser {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--color-text-primary);
+}
+
+.activityTime {
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
+
+.activityDesc {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  line-height: var(--leading-relaxed);
+}
+
+/* Quick Actions Card */
+.quickActionsCard {
+  grid-column: 2;
+}
+
+.quickActions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.quickAction {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-bg-tertiary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  text-decoration: none;
+  color: var(--color-text-primary);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  transition: all var(--transition-fast);
+}
+
+.quickAction:hover {
+  border-color: var(--color-border-hover);
+  background: var(--color-bg-card-hover);
+  transform: translateX(4px);
+}
+
+.qaIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-lg);
+  color: white;
+  flex-shrink: 0;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .contentGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .tasksCard,
+  .deadlinesCard,
+  .activityCard,
+  .quickActionsCard {
+    grid-column: 1;
+  }
+}

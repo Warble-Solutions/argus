@@ -1,0 +1,16 @@
+.dashboardShell {
+  min-height: 100vh;
+}
+
+.mainContent {
+  margin-left: var(--sidebar-width);
+  margin-top: var(--topbar-height);
+  min-height: calc(100vh - var(--topbar-height));
+  transition: margin-left var(--transition-base);
+}
+
+@media (max-width: 768px) {
+  .mainContent {
+    margin-left: 0;
+  }
+}

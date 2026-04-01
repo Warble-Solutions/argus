@@ -1,0 +1,9 @@
+.chartPlaceholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 240px;
+  border: 2px dashed var(--color-border);
+  border-radius: var(--radius-lg);
+}

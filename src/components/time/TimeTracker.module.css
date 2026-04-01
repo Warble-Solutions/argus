@@ -1,0 +1,48 @@
+.timeCard {
+  overflow: visible;
+}
+
+.timerSection {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-4) 0;
+  border-bottom: 1px solid var(--color-border);
+  margin-bottom: var(--space-3);
+}
+
+.timerDisplay {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.timerValue {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-bold);
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted);
+  transition: color var(--transition-fast);
+}
+
+.timerValue.active {
+  color: var(--color-accent-blue);
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.totalSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.totalRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.activeText {
+  color: var(--color-accent-blue);
+}
