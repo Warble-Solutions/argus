@@ -1,49 +1,64 @@
 'use client'
 
-import { useState } from 'react'
-import { Plus, Clock, Upload, CheckCircle, Circle, AlertCircle, Send } from 'lucide-react'
+import { useState, useTransition } from 'react'
+import { Plus, Clock, CheckCircle, Circle, AlertCircle, Send } from 'lucide-react'
 import Modal from '@/components/ui/Modal'
-import { TASK_STATUS_CONFIG, TASK_PRIORITY_CONFIG, getInitials, formatMinutes } from '@/lib/utils'
-import { getUserById, mockUsers } from '@/lib/mock-data'
-import type { Task, UserRole } from '@/types'
+import { createTask, submitInternTask, updateTaskStatus } from '@/lib/actions/data'
+import { TASK_PRIORITY_CONFIG, getInitials, formatMinutes } from '@/lib/utils'
+import type { UserRole } from '@/types'
 import styles from './TaskSection.module.css'
 
 interface TaskSectionProps {
-  tasks: Task[]
+  tasks: any[]
   moduleId: string
   userRole?: UserRole
+  teamMembers?: any[]
 }
 
-export default function TaskSection({ tasks, moduleId, userRole = 'manager' }: TaskSectionProps) {
+export default function TaskSection({ tasks, moduleId, userRole = 'manager', teamMembers = [] }: TaskSectionProps) {
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [submitted, setSubmitted] = useState(false)
-  const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    task_type: 'general',
-    priority: 'medium',
-    assigned_to: '',
-    due_date: '',
-  })
+  const [isPending, startTransition] = useTransition()
+  const [error, setError] = useState('')
 
   const isIntern = userRole === 'intern'
-  const completedTasks = tasks.filter(t => t.status === 'done').length
+  const completedTasks = tasks.filter((t: any) => t.status === 'done').length
   const taskProgress = tasks.length > 0 ? Math.round((completedTasks / tasks.length) * 100) : 0
-  const employees = mockUsers.filter(u => u.role !== 'intern')
+  const employees = teamMembers.filter((u: any) => u.role !== 'intern')
 
-  const handleCreate = (e: React.FormEvent) => {
+  const handleCreate = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    if (isIntern) {
-      setSubmitted(true)
-      setTimeout(() => {
-        setShowCreateModal(false)
-        setSubmitted(false)
-      }, 2000)
-    } else {
-      alert(`Task "${formData.title}" would be created for module ${moduleId}.\n\nThis will work once Supabase is connected.`)
-      setShowCreateModal(false)
-    }
-    setFormData({ title: '', description: '', task_type: 'general', priority: 'medium', assigned_to: '', due_date: '' })
+    setError('')
+    const formData = new FormData(e.currentTarget)
+    formData.append('module_id', moduleId)
+
+    startTransition(async () => {
+      try {
+        if (isIntern) {
+          await submitInternTask(formData)
+          setSubmitted(true)
+          setTimeout(() => {
+            setShowCreateModal(false)
+            setSubmitted(false)
+          }, 2000)
+        } else {
+          await createTask(formData)
+          setShowCreateModal(false)
+        }
+      } catch (err: any) {
+        setError(err.message || 'Failed to create task')
+      }
+    })
+  }
+
+  const handleStatusChange = (taskId: string, newStatus: string) => {
+    startTransition(async () => {
+      try {
+        await updateTaskStatus(taskId, newStatus)
+      } catch (err: any) {
+        console.error('Failed to update task status:', err)
+      }
+    })
   }
 
   return (
@@ -75,9 +90,9 @@ export default function TaskSection({ tasks, moduleId, userRole = 'manager' }: T
             <p className="empty-state-desc">Create tasks to track work on this module</p>
           </div>
         ) : (
-          tasks.map(task => {
-            const taskPriority = TASK_PRIORITY_CONFIG[task.priority]
-            const taskAssignee = getUserById(task.assigned_to)
+          tasks.map((task: any) => {
+            const taskPriority = TASK_PRIORITY_CONFIG[task.priority as keyof typeof TASK_PRIORITY_CONFIG] || { label: task.priority, cssClass: 'badge-neutral' }
+            const assigneeName = task.profiles?.full_name
 
             return (
               <div key={task.id} className={styles.taskItem}>
@@ -99,7 +114,7 @@ export default function TaskSection({ tasks, moduleId, userRole = 'manager' }: T
                     <span className="badge badge-neutral">{task.task_type}</span>
                     {task.status === 'in_progress' && (
                       <span className={styles.taskTimer}>
-                        <Clock size={11} /> {formatMinutes(task.time_spent_minutes)}
+                        <Clock size={11} /> {formatMinutes(task.time_spent_minutes || 0)}
                       </span>
                     )}
                   </div>
@@ -108,6 +123,7 @@ export default function TaskSection({ tasks, moduleId, userRole = 'manager' }: T
                   <select
                     className={styles.statusSelect}
                     defaultValue={task.status}
+                    onChange={(e) => handleStatusChange(task.id, e.target.value)}
                     aria-label={`Status for ${task.title}`}
                   >
                     <option value="todo">To Do</option>
@@ -115,9 +131,9 @@ export default function TaskSection({ tasks, moduleId, userRole = 'manager' }: T
                     <option value="done">Done</option>
                     <option value="blocked">Blocked</option>
                   </select>
-                  {taskAssignee && (
-                    <div className="avatar avatar-sm" title={taskAssignee.full_name}>
-                      {getInitials(taskAssignee.full_name)}
+                  {assigneeName && (
+                    <div className="avatar avatar-sm" title={assigneeName}>
+                      {getInitials(assigneeName)}
                     </div>
                   )}
                 </div>
@@ -136,8 +152,8 @@ export default function TaskSection({ tasks, moduleId, userRole = 'manager' }: T
           submitted ? null : (
           <>
             <button className="btn btn-ghost" onClick={() => setShowCreateModal(false)}>Cancel</button>
-            <button className="btn btn-primary" form="create-task-form" type="submit">
-              {isIntern ? <><Send size={14} /> Submit for Approval</> : 'Create Task'}
+            <button className="btn btn-primary" form="create-task-form" type="submit" disabled={isPending}>
+              {isPending ? 'Submitting...' : isIntern ? <><Send size={14} /> Submit for Approval</> : 'Create Task'}
             </button>
           </>
           )
@@ -147,49 +163,28 @@ export default function TaskSection({ tasks, moduleId, userRole = 'manager' }: T
           <div style={{ textAlign: 'center', padding: 'var(--space-6) 0' }}>
             <CheckCircle size={48} style={{ color: 'var(--color-accent-emerald)', marginBottom: 'var(--space-4)' }} />
             <p style={{ fontSize: 'var(--text-lg)', fontWeight: 'var(--weight-semibold)', marginBottom: 'var(--space-2)' }}>Submitted for Approval</p>
-            <p className="text-small text-muted">Your task suggestion has been sent to the approval queue. An employee or manager will review it shortly.</p>
+            <p className="text-small text-muted">Your task suggestion has been sent to the approval queue.</p>
           </div>
         ) : (
         <form id="create-task-form" onSubmit={handleCreate} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+          {error && <div style={{ padding: 'var(--space-3)', borderRadius: 'var(--radius-md)', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.25)', color: '#f87171', fontSize: 'var(--text-sm)' }}>{error}</div>}
           {isIntern && (
             <div style={{ padding: 'var(--space-3)', borderRadius: 'var(--radius-md)', background: 'rgba(59, 130, 246, 0.08)', border: '1px solid rgba(59, 130, 246, 0.2)', fontSize: 'var(--text-sm)', color: 'var(--color-accent-blue)' }}>
-              💡 As an intern, your task suggestion will be reviewed by an employee or manager before being created.
+              💡 As an intern, your task suggestion will be reviewed before being created.
             </div>
           )}
           <div className="input-group">
             <label htmlFor="task-title" className="input-label">Task Title *</label>
-            <input
-              id="task-title"
-              type="text"
-              className="input-field"
-              placeholder="e.g. Create storyboard for intro section"
-              value={formData.title}
-              onChange={e => setFormData({ ...formData, title: e.target.value })}
-              required
-              autoFocus
-            />
+            <input id="task-title" name="title" type="text" className="input-field" placeholder="e.g. Create storyboard for intro section" required autoFocus />
           </div>
           <div className="input-group">
             <label htmlFor="task-desc" className="input-label">{isIntern ? 'Why should this task be created? *' : 'Description'}</label>
-            <textarea
-              id="task-desc"
-              className="input-field"
-              placeholder={isIntern ? 'Explain why this task is needed...' : 'Task details...'}
-              value={formData.description}
-              onChange={e => setFormData({ ...formData, description: e.target.value })}
-              rows={3}
-              required={isIntern}
-            />
+            <textarea id="task-desc" name="description" className="input-field" placeholder={isIntern ? 'Explain why...' : 'Task details...'} rows={3} required={isIntern} />
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-4)' }}>
             <div className="input-group">
               <label htmlFor="task-type" className="input-label">Task Type</label>
-              <select
-                id="task-type"
-                className="input-field"
-                value={formData.task_type}
-                onChange={e => setFormData({ ...formData, task_type: e.target.value })}
-              >
+              <select id="task-type" name="task_type" className="input-field">
                 <option value="general">General</option>
                 <option value="storyboard">Storyboard</option>
                 <option value="video">Video</option>
@@ -200,12 +195,7 @@ export default function TaskSection({ tasks, moduleId, userRole = 'manager' }: T
             </div>
             <div className="input-group">
               <label htmlFor="task-priority" className="input-label">Priority</label>
-              <select
-                id="task-priority"
-                className="input-field"
-                value={formData.priority}
-                onChange={e => setFormData({ ...formData, priority: e.target.value })}
-              >
+              <select id="task-priority" name="priority" className="input-field">
                 <option value="low">Low</option>
                 <option value="medium">Medium</option>
                 <option value="high">High</option>
@@ -217,27 +207,16 @@ export default function TaskSection({ tasks, moduleId, userRole = 'manager' }: T
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-4)' }}>
               <div className="input-group">
                 <label htmlFor="task-assignee" className="input-label">Assign To</label>
-                <select
-                  id="task-assignee"
-                  className="input-field"
-                  value={formData.assigned_to}
-                  onChange={e => setFormData({ ...formData, assigned_to: e.target.value })}
-                >
+                <select id="task-assignee" name="assigned_to" className="input-field">
                   <option value="">Select team member</option>
-                  {employees.map(u => (
+                  {employees.map((u: any) => (
                     <option key={u.id} value={u.id}>{u.full_name}</option>
                   ))}
                 </select>
               </div>
               <div className="input-group">
                 <label htmlFor="task-due" className="input-label">Due Date</label>
-                <input
-                  id="task-due"
-                  type="date"
-                  className="input-field"
-                  value={formData.due_date}
-                  onChange={e => setFormData({ ...formData, due_date: e.target.value })}
-                />
+                <input id="task-due" name="due_date" type="date" className="input-field" />
               </div>
             </div>
           )}

@@ -5,261 +5,161 @@ import {
   AlertTriangle,
   TrendingUp,
   ArrowRight,
-  Clock,
-  CheckCircle2,
-  Circle,
   MessageSquare,
+  Plus,
 } from 'lucide-react'
-import { mockProjects, mockTasks, mockModules, mockApprovals, mockActivityLog, currentUser, getUserById } from '@/lib/mock-data'
-import { MODULE_STATUS_CONFIG, TASK_STATUS_CONFIG, TASK_PRIORITY_CONFIG, formatRelativeDate, getDaysUntil, getDeadlineStatus, getInitials } from '@/lib/utils'
+import { createClient } from '@/lib/supabase/server'
+import { getCurrentUser } from '@/lib/actions/auth'
+import { formatDate, getDeadlineStatus, getInitials } from '@/lib/utils'
 import styles from './page.module.css'
 
-export default function DashboardHome() {
-  const user = currentUser
+export default async function DashboardPage() {
+  const supabase = await createClient()
+  const user = await getCurrentUser()
 
-  // Stats
-  const activeProjects = mockProjects.filter(p => p.status === 'active').length
-  const totalTasks = mockTasks.length
-  const activeTasks = mockTasks.filter(t => t.status === 'in_progress').length
-  const pendingApprovals = mockApprovals.filter(a => a.status === 'pending').length
-  const overdueModules = mockModules.filter(m => {
-    const days = getDaysUntil(m.deadline)
-    return days < 0 && m.status !== 'approved' && m.status !== 'delivered'
-  }).length
+  // Fetch real counts
+  const { count: projectCount } = await supabase.from('projects').select('*', { count: 'exact', head: true }).eq('status', 'active')
+  const { count: taskCount } = await supabase.from('tasks').select('*', { count: 'exact', head: true }).neq('status', 'done')
+  const { count: approvalCount } = await supabase.from('approvals').select('*', { count: 'exact', head: true }).eq('status', 'pending')
 
-  // My tasks (for current user)
-  const myTasks = mockTasks.filter(t => t.status !== 'done').slice(0, 5)
+  // Fetch overdue modules
+  const { count: overdueCount } = await supabase
+    .from('modules')
+    .select('*', { count: 'exact', head: true })
+    .lt('deadline', new Date().toISOString())
+    .not('status', 'in', '("approved","delivered")')
 
-  // Upcoming deadlines
-  const upcomingDeadlines = [...mockModules]
-    .filter(m => m.status !== 'approved' && m.status !== 'delivered')
-    .sort((a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime())
-    .slice(0, 4)
+  // Fetch recent projects
+  const { data: recentProjects } = await supabase
+    .from('projects')
+    .select('id, name, client_name, status, deadline, progress, modules_count, completed_modules')
+    .order('created_at', { ascending: false })
+    .limit(3)
+
+  // Fetch my tasks
+  const { data: myTasks } = await supabase
+    .from('tasks')
+    .select('id, title, priority, status, task_type, module_id')
+    .neq('status', 'done')
+    .order('created_at', { ascending: false })
+    .limit(5)
+
+  const stats = [
+    { label: 'Active Projects', value: projectCount || 0, icon: <FolderKanban size={22} />, accent: 'blue', href: '/projects' },
+    { label: 'Open Tasks', value: taskCount || 0, icon: <ClipboardList size={22} />, accent: 'cyan', href: '/projects' },
+    { label: 'Pending Approvals', value: approvalCount || 0, icon: <TrendingUp size={22} />, accent: 'amber', href: '/approvals' },
+    { label: 'Overdue Items', value: overdueCount || 0, icon: <AlertTriangle size={22} />, accent: 'red', href: '/projects' },
+  ]
 
   return (
     <div className="page-container">
-      {/* Page Header */}
       <div className="page-header">
         <div>
-          <h1 className="page-title">Dashboard</h1>
-          <p className="page-subtitle">Welcome back, {user.full_name}</p>
+          <h1 className="page-title">Welcome back, {user?.full_name?.split(' ')[0] || 'there'}</h1>
+          <p className="page-subtitle">Here&apos;s what&apos;s happening across your projects</p>
         </div>
-        <div className="flex-row">
-          <Link href="/chat" className="btn btn-primary">
-            <MessageSquare size={16} />
-            Open Chat
+      </div>
+
+      {/* Stats Cards */}
+      <div className={styles.statsGrid}>
+        {stats.map(stat => (
+          <Link key={stat.label} href={stat.href} className={`card card-interactive ${styles.statCard}`}>
+            <div className={styles.statIcon} data-accent={stat.accent}>{stat.icon}</div>
+            <div className={styles.statInfo}>
+              <span className={styles.statValue}>{stat.value}</span>
+              <span className={styles.statLabel}>{stat.label}</span>
+            </div>
           </Link>
-        </div>
+        ))}
       </div>
 
-      {/* Stats Grid */}
-      <div className={`grid-stats ${styles.statsSection}`}>
-        <div className="card stat-card" style={{ '--stat-color': 'var(--color-accent-blue)' } as React.CSSProperties}>
-          <div className="card-body">
-            <div className="flex-row">
-              <FolderKanban size={20} style={{ color: 'var(--color-accent-blue)' }} />
-              <span className="text-small text-muted">Active Projects</span>
-            </div>
-            <div className="stat-value">{activeProjects}</div>
-            <div className="stat-change positive">
-              <TrendingUp size={12} />
-              <span>2 ahead of schedule</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="card stat-card" style={{ '--stat-color': 'var(--color-accent-emerald)' } as React.CSSProperties}>
-          <div className="card-body">
-            <div className="flex-row">
-              <ClipboardList size={20} style={{ color: 'var(--color-accent-emerald)' }} />
-              <span className="text-small text-muted">Active Tasks</span>
-            </div>
-            <div className="stat-value">{activeTasks}<span className="text-small text-muted"> / {totalTasks}</span></div>
-            <div className="stat-change positive">
-              <CheckCircle2 size={12} />
-              <span>{mockTasks.filter(t => t.status === 'done').length} completed</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="card stat-card" style={{ '--stat-color': 'var(--color-accent-amber)' } as React.CSSProperties}>
-          <div className="card-body">
-            <div className="flex-row">
-              <Clock size={20} style={{ color: 'var(--color-accent-amber)' }} />
-              <span className="text-small text-muted">Pending Approvals</span>
-            </div>
-            <div className="stat-value">{pendingApprovals}</div>
-            <Link href="/approvals" className="stat-change" style={{ color: 'var(--color-accent-blue)' }}>
-              <span>Review now</span>
-              <ArrowRight size={12} />
-            </Link>
-          </div>
-        </div>
-
-        <div className="card stat-card" style={{ '--stat-color': overdueModules > 0 ? 'var(--color-accent-red)' : 'var(--color-accent-emerald)' } as React.CSSProperties}>
-          <div className="card-body">
-            <div className="flex-row">
-              <AlertTriangle size={20} style={{ color: overdueModules > 0 ? 'var(--color-accent-red)' : 'var(--color-accent-emerald)' }} />
-              <span className="text-small text-muted">Overdue</span>
-            </div>
-            <div className="stat-value" style={{ color: overdueModules > 0 ? 'var(--color-accent-red)' : undefined }}>{overdueModules}</div>
-            <div className={`stat-change ${overdueModules > 0 ? 'negative' : 'positive'}`}>
-              <span>{overdueModules > 0 ? 'Needs attention' : 'All on track'}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content Grid */}
-      <div className={styles.contentGrid}>
+      <div className={styles.dashboardGrid}>
         {/* My Tasks */}
         <div className={`card ${styles.tasksCard}`}>
           <div className="card-header">
-            <h2 className="card-title">Active Tasks</h2>
-            <Link href="/projects" className="btn btn-ghost btn-sm">
-              View All <ArrowRight size={14} />
-            </Link>
+            <h2 className="card-title">📋 My Tasks</h2>
+            <Link href="/projects" className="btn btn-ghost btn-sm">View All <ArrowRight size={14} /></Link>
           </div>
           <div className={styles.tasksList}>
-            {myTasks.map((task) => {
-              const statusConfig = TASK_STATUS_CONFIG[task.status]
-              const priorityConfig = TASK_PRIORITY_CONFIG[task.priority]
-              const assignee = getUserById(task.assigned_to)
-              const deadlineStatus = getDeadlineStatus(task.due_date)
-
-              return (
-                <div key={task.id} className={styles.taskRow}>
+            {(!myTasks || myTasks.length === 0) ? (
+              <div className="empty-state" style={{ padding: 'var(--space-6) 0' }}>
+                <ClipboardList size={32} className="empty-state-icon" />
+                <p className="empty-state-title">No open tasks</p>
+                <p className="empty-state-desc">Create tasks in your project modules</p>
+              </div>
+            ) : (
+              myTasks.map(task => (
+                <div key={task.id} className={styles.taskItem}>
                   <div className={styles.taskLeft}>
-                    <span className={`status-dot ${statusConfig.dotClass}`} />
-                    <div className={styles.taskInfo}>
-                      <span className={styles.taskTitle}>{task.title}</span>
-                      <div className={styles.taskMeta}>
-                        <span className={`badge ${priorityConfig.cssClass}`}>{priorityConfig.label}</span>
-                        <span className={`${styles.taskDeadline} ${deadlineStatus === 'overdue' ? styles.overdue : ''} ${deadlineStatus === 'urgent' ? styles.urgent : ''}`}>
-                          <Clock size={11} />
-                          {getDaysUntil(task.due_date) < 0
-                            ? `${Math.abs(getDaysUntil(task.due_date))}d overdue`
-                            : getDaysUntil(task.due_date) === 0
-                            ? 'Due today'
-                            : `${getDaysUntil(task.due_date)}d left`
-                          }
-                        </span>
-                      </div>
+                    <span className={styles.taskTitle}>{task.title}</span>
+                    <div className={styles.taskMeta}>
+                      <span className={`badge badge-${task.priority === 'urgent' ? 'red' : task.priority === 'high' ? 'amber' : 'neutral'}`}>
+                        {task.priority}
+                      </span>
+                      <span className="badge badge-neutral">{task.task_type}</span>
                     </div>
                   </div>
-                  {assignee && (
-                    <div className="avatar avatar-sm" title={assignee.full_name}>
-                      {getInitials(assignee.full_name)}
-                    </div>
-                  )}
+                  <span className={`badge ${task.status === 'in_progress' ? 'badge-blue' : task.status === 'blocked' ? 'badge-red' : 'badge-neutral'}`}>
+                    {task.status === 'in_progress' ? 'In Progress' : task.status === 'blocked' ? 'Blocked' : 'To Do'}
+                  </span>
                 </div>
-              )
-            })}
+              ))
+            )}
           </div>
         </div>
 
-        {/* Upcoming Deadlines */}
-        <div className={`card ${styles.deadlinesCard}`}>
+        {/* Recent Projects */}
+        <div className={`card ${styles.projectsCard}`}>
           <div className="card-header">
-            <h2 className="card-title">Upcoming Deadlines</h2>
+            <h2 className="card-title">🗂 Recent Projects</h2>
+            <Link href="/projects" className="btn btn-ghost btn-sm">View All <ArrowRight size={14} /></Link>
           </div>
-          <div className={styles.deadlinesList}>
-            {upcomingDeadlines.map((mod) => {
-              const statusConfig = MODULE_STATUS_CONFIG[mod.status]
-              const deadlineStatus = getDeadlineStatus(mod.deadline)
-              const daysLeft = getDaysUntil(mod.deadline)
-              const assignee = getUserById(mod.assigned_to)
-
-              return (
-                <Link
-                  key={mod.id}
-                  href={`/projects/${mod.project_id}/modules/${mod.id}`}
-                  className={styles.deadlineItem}
-                >
-                  <div className={styles.deadlineLeft}>
-                    <div className={`${styles.deadlineIndicator} ${styles[deadlineStatus]}`} />
-                    <div className={styles.deadlineInfo}>
-                      <span className={styles.deadlineTitle}>Module {mod.module_number}: {mod.title}</span>
-                      <div className={styles.deadlineMeta}>
-                        <span className={`badge ${statusConfig.cssClass}`}>{statusConfig.label}</span>
-                        {mod.stage_gate_pending && (
-                          <span className="badge badge-amber">🔒 Gate Pending</span>
-                        )}
+          <div className={styles.projectsList}>
+            {(!recentProjects || recentProjects.length === 0) ? (
+              <div className="empty-state" style={{ padding: 'var(--space-6) 0' }}>
+                <FolderKanban size={32} className="empty-state-icon" />
+                <p className="empty-state-title">No projects yet</p>
+                <p className="empty-state-desc">Create your first project to get started</p>
+                <Link href="/projects" className="btn btn-primary btn-sm"><Plus size={14} /> New Project</Link>
+              </div>
+            ) : (
+              recentProjects.map(project => {
+                const deadlineStatus = getDeadlineStatus(project.deadline)
+                return (
+                  <Link key={project.id} href={`/projects/${project.id}`} className={styles.projectItem}>
+                    <div className={styles.projectLeft}>
+                      <span className={styles.projectName}>{project.name}</span>
+                      <span className="text-tiny text-dim">{project.client_name}</span>
+                    </div>
+                    <div className={styles.projectRight}>
+                      <span className={`text-tiny ${styles[deadlineStatus] || ''}`}>
+                        {formatDate(project.deadline)}
+                      </span>
+                      <div className="progress-bar" style={{ width: '60px' }}>
+                        <div className="progress-bar-fill" style={{ width: `${project.progress || 0}%` }} />
                       </div>
                     </div>
-                  </div>
-                  <div className={styles.deadlineRight}>
-                    <span className={`${styles.daysLabel} ${styles[deadlineStatus]}`}>
-                      {daysLeft < 0 ? `${Math.abs(daysLeft)}d overdue` : daysLeft === 0 ? 'Today' : `${daysLeft}d`}
-                    </span>
-                    {assignee && (
-                      <div className="avatar avatar-sm" title={assignee.full_name}>
-                        {getInitials(assignee.full_name)}
-                      </div>
-                    )}
-                  </div>
-                </Link>
-              )
-            })}
-          </div>
-        </div>
-
-        {/* Recent Activity */}
-        <div className={`card ${styles.activityCard}`}>
-          <div className="card-header">
-            <h2 className="card-title">Recent Activity</h2>
-          </div>
-          <div className={styles.activityList}>
-            {mockActivityLog.map((entry) => {
-              const user = entry.user
-
-              return (
-                <div key={entry.id} className={styles.activityItem}>
-                  <div className={styles.activityTimeline}>
-                    <div className={styles.activityDot} />
-                    <div className={styles.activityLine} />
-                  </div>
-                  <div className={styles.activityContent}>
-                    <div className={styles.activityHeader}>
-                      {user && (
-                        <div className="avatar avatar-sm">
-                          {getInitials(user.full_name)}
-                        </div>
-                      )}
-                      <span className={styles.activityUser}>{user?.full_name}</span>
-                      <span className={styles.activityTime}>{formatRelativeDate(entry.created_at)}</span>
-                    </div>
-                    <p className={styles.activityDesc}>{entry.description}</p>
-                  </div>
-                </div>
-              )
-            })}
+                  </Link>
+                )
+              })
+            )}
           </div>
         </div>
 
         {/* Quick Actions */}
-        <div className={`card ${styles.quickActionsCard}`}>
+        <div className={`card ${styles.quickCard}`}>
           <div className="card-header">
-            <h2 className="card-title">Quick Actions</h2>
+            <h2 className="card-title">⚡ Quick Actions</h2>
           </div>
           <div className={styles.quickActions}>
-            <Link href="/chat" className={styles.quickAction}>
-              <div className={styles.qaIcon} style={{ background: 'linear-gradient(135deg, var(--color-accent-blue), var(--color-accent-purple))' }}>
-                <MessageSquare size={20} />
-              </div>
-              <span>Chat with Argus</span>
+            <Link href="/chat" className={`btn btn-ghost ${styles.quickBtn}`}>
+              <MessageSquare size={18} /> Chat with Argus
             </Link>
-            <Link href="/projects" className={styles.quickAction}>
-              <div className={styles.qaIcon} style={{ background: 'linear-gradient(135deg, var(--color-accent-emerald), var(--color-accent-cyan))' }}>
-                <FolderKanban size={20} />
-              </div>
-              <span>View Projects</span>
+            <Link href="/projects" className={`btn btn-ghost ${styles.quickBtn}`}>
+              <FolderKanban size={18} /> Browse Projects
             </Link>
-            <Link href="/approvals" className={styles.quickAction}>
-              <div className={styles.qaIcon} style={{ background: 'linear-gradient(135deg, var(--color-accent-amber), #ef4444)' }}>
-                <ClipboardList size={20} />
-              </div>
-              <span>Pending Approvals</span>
+            <Link href="/approvals" className={`btn btn-ghost ${styles.quickBtn}`}>
+              <TrendingUp size={18} /> Review Approvals
             </Link>
           </div>
         </div>

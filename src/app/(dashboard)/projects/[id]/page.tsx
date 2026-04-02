@@ -1,14 +1,15 @@
 import Link from 'next/link'
 import { ArrowLeft, Calendar } from 'lucide-react'
-import { getProjectById, getModulesByProject } from '@/lib/mock-data'
+import { getProjectById, getModulesByProject, getTeamMembers } from '@/lib/actions/data'
 import { formatDate, getDeadlineStatus } from '@/lib/utils'
 import ModulesTable from '@/components/projects/ModulesTable'
 import styles from './page.module.css'
 
 export default async function ProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const project = getProjectById(id)
-  const modules = getModulesByProject(id)
+  const project = await getProjectById(id)
+  const modules = await getModulesByProject(id)
+  const teamMembers = await getTeamMembers()
 
   if (!project) {
     return (
@@ -22,11 +23,10 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
   }
 
   const progress = project.progress || 0
-  const nextModuleNumber = modules.length > 0 ? Math.max(...modules.map(m => m.module_number)) + 1 : 1
+  const nextModuleNumber = modules.length > 0 ? Math.max(...modules.map((m: any) => m.module_number)) + 1 : 1
 
   return (
     <div className="page-container">
-      {/* Back link + Header */}
       <Link href="/projects" className={styles.backLink}>
         <ArrowLeft size={16} /> Back to Projects
       </Link>
@@ -34,11 +34,10 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
       <div className="page-header">
         <div>
           <h1 className="page-title">{project.name}</h1>
-          <p className="page-subtitle">{project.client_name} · {project.description}</p>
+          <p className="page-subtitle">{project.client_name}{project.description ? ` · ${project.description}` : ''}</p>
         </div>
       </div>
 
-      {/* Project Stats Bar */}
       <div className={styles.statsBar}>
         <div className={styles.statItem}>
           <span className="text-tiny text-dim">Status</span>
@@ -68,9 +67,13 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
         </div>
       </div>
 
-      {/* Modules Table — Client Component */}
       <div className={styles.modulesSection}>
-        <ModulesTable modules={modules} projectId={project.id} nextModuleNumber={nextModuleNumber} />
+        <ModulesTable
+          modules={modules}
+          projectId={project.id}
+          nextModuleNumber={nextModuleNumber}
+          teamMembers={teamMembers}
+        />
       </div>
     </div>
   )

@@ -1,5 +1,5 @@
 import { Users, UserPlus, Shield, Award } from 'lucide-react'
-import { mockUsers } from '@/lib/mock-data'
+import { getTeamMembers } from '@/lib/actions/data'
 import { getInitials } from '@/lib/utils'
 import styles from './page.module.css'
 
@@ -10,13 +10,14 @@ const roleConfig: Record<string, { label: string; color: string }> = {
   intern: { label: 'Intern', color: 'var(--color-accent-amber)' },
 }
 
-export default function TeamPage() {
+export default async function TeamPage() {
+  const teamMembers = await getTeamMembers()
   return (
     <div className="page-container">
       <div className="page-header">
         <div>
           <h1 className="page-title">Team Management</h1>
-          <p className="page-subtitle">{mockUsers.length} team members</p>
+          <p className="page-subtitle">{teamMembers.length} team member{teamMembers.length !== 1 ? 's' : ''}</p>
         </div>
         <button className="btn btn-primary" id="invite-member-btn">
           <UserPlus size={16} /> Invite Member
@@ -26,7 +27,7 @@ export default function TeamPage() {
       {/* Team stats */}
       <div className="grid-stats" style={{ marginBottom: 'var(--space-6)' }}>
         {(['manager', 'employee', 'intern'] as const).map(role => {
-          const count = mockUsers.filter(u => u.role === role).length
+          const count = teamMembers.filter((u: any) => u.role === role).length
           const config = roleConfig[role]
           return (
             <div key={role} className="card stat-card" style={{ '--stat-color': config.color } as React.CSSProperties}>
@@ -56,7 +57,7 @@ export default function TeamPage() {
               </tr>
             </thead>
             <tbody>
-              {mockUsers.map(user => {
+              {teamMembers.map((user: any) => {
                 const config = roleConfig[user.role]
                 return (
                   <tr key={user.id}>
