@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Eye, EyeOff, LogIn } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
 import styles from './page.module.css'
 
 export default function LoginPage() {
@@ -19,15 +20,20 @@ export default function LoginPage() {
     setError('')
     setLoading(true)
 
-    // Mock login — will be replaced with Supabase Auth
-    await new Promise(r => setTimeout(r, 800))
+    const supabase = createClient()
+    const { error: authError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    })
 
-    if (email && password) {
-      router.push('/')
-    } else {
-      setError('Please enter your email and password.')
+    if (authError) {
+      setError(authError.message)
       setLoading(false)
+      return
     }
+
+    router.push('/')
+    router.refresh()
   }
 
   return (

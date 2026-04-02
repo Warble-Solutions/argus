@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Eye, EyeOff, UserPlus } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
 import styles from '../login/page.module.css'
 
 export default function SignupPage() {
@@ -20,15 +21,26 @@ export default function SignupPage() {
     setError('')
     setLoading(true)
 
-    // Mock signup — will be replaced with Supabase Auth
-    await new Promise(r => setTimeout(r, 800))
+    const supabase = createClient()
+    const { error: authError } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          full_name: fullName,
+          role: 'employee',
+        },
+      },
+    })
 
-    if (fullName && email && password) {
-      router.push('/')
-    } else {
-      setError('Please fill in all fields.')
+    if (authError) {
+      setError(authError.message)
       setLoading(false)
+      return
     }
+
+    router.push('/')
+    router.refresh()
   }
 
   return (
@@ -85,7 +97,7 @@ export default function SignupPage() {
               id="signup-password"
               type={showPassword ? 'text' : 'password'}
               className="input-field"
-              placeholder="Choose a password"
+              placeholder="Choose a password (min 6 chars)"
               value={password}
               onChange={e => setPassword(e.target.value)}
               required

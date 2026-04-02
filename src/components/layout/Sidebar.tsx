@@ -16,9 +16,10 @@ import {
   ChevronLeft,
   ChevronRight,
   Eye,
+  LogOut,
 } from 'lucide-react'
 import { getInitials } from '@/lib/utils'
-import { currentUser } from '@/lib/mock-data'
+import { signOut } from '@/lib/actions/auth'
 import type { UserRole } from '@/types'
 import styles from './Sidebar.module.css'
 
@@ -34,7 +35,7 @@ const navItems: NavItem[] = [
   { label: 'Dashboard', href: '/', icon: <LayoutDashboard size={20} /> },
   { label: 'Chat', href: '/chat', icon: <MessageSquare size={20} /> },
   { label: 'Projects', href: '/projects', icon: <FolderKanban size={20} /> },
-  { label: 'Approvals', href: '/approvals', icon: <ClipboardCheck size={20} />, badge: 3 },
+  { label: 'Approvals', href: '/approvals', icon: <ClipboardCheck size={20} /> },
   { label: 'Files', href: '/files', icon: <FileUp size={20} /> },
   { label: 'Emails', href: '/emails', icon: <Mail size={20} />, roles: ['admin', 'manager', 'employee'] },
   { label: 'Analytics', href: '/admin', icon: <BarChart3 size={20} />, roles: ['admin', 'manager'] },
@@ -42,14 +43,20 @@ const navItems: NavItem[] = [
   { label: 'Settings', href: '/admin/settings', icon: <Settings size={20} />, roles: ['admin', 'manager'] },
 ]
 
-export default function Sidebar() {
+interface SidebarProps {
+  user: { full_name: string; role: UserRole } | null
+}
+
+export default function Sidebar({ user }: SidebarProps) {
   const [collapsed, setCollapsed] = useState(false)
   const pathname = usePathname()
-  const user = currentUser
+
+  const userName = user?.full_name || 'User'
+  const userRole = (user?.role || 'employee') as UserRole
 
   const filteredItems = navItems.filter(item => {
     if (!item.roles) return true
-    return item.roles.includes(user.role)
+    return item.roles.includes(userRole)
   })
 
   return (
@@ -97,18 +104,27 @@ export default function Sidebar() {
         })}
       </nav>
 
-      {/* User Info */}
+      {/* User Info + Sign Out */}
       <div className={styles.userSection}>
         <div className={styles.userAvatar}>
-          {getInitials(user.full_name)}
+          {getInitials(userName)}
         </div>
         {!collapsed && (
           <div className={styles.userInfo}>
-            <span className={styles.userName}>{user.full_name}</span>
-            <span className={styles.userRole}>{user.role}</span>
+            <span className={styles.userName}>{userName}</span>
+            <span className={styles.userRole}>{userRole}</span>
           </div>
         )}
       </div>
+
+      {!collapsed && (
+        <form action={signOut}>
+          <button type="submit" className={styles.navItem} style={{ width: '100%', border: 'none', cursor: 'pointer', background: 'none', marginBottom: 'var(--space-2)' }}>
+            <span className={styles.navIcon}><LogOut size={20} /></span>
+            <span className={styles.navLabel}>Sign Out</span>
+          </button>
+        </form>
+      )}
 
       {/* Collapse Toggle */}
       <button
