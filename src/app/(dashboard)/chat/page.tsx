@@ -13,7 +13,7 @@ export default function ChatPage() {
           </div>
           <h1 className={styles.welcomeTitle}>Welcome to Argus</h1>
           <p className={styles.welcomeSubtitle}>
-            I&apos;m your AI-powered LMS coordinator. Ask me to update tasks, check module status,
+            I&apos;m your all-seeing production assistant. Ask me to update tasks, check module status,
             manage files, or anything else related to your projects.
           </p>
           <div className={styles.suggestions}>

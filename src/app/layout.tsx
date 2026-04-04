@@ -12,8 +12,8 @@ const jetbrainsMono = JetBrains_Mono({
 })
 
 export const metadata = {
-  title: 'Argus — AI-Powered LMS Coordinator',
-  description: 'The all-seeing coordinator for LMS module production. Manage tasks, files, and team performance with AI-driven intelligence.',
+  title: 'Argus — The Seer',
+  description: 'See everything. Miss nothing. Manage projects, modules, tasks, and team performance with all-seeing intelligence.',
   keywords: ['LMS', 'project management', 'AI coordinator', 'production tracking'],
 }
 

@@ -69,7 +69,7 @@ export default function Sidebar({ user }: SidebarProps) {
         {!collapsed && (
           <div className={styles.logoText}>
             <span className={styles.logoTitle}>ARGUS</span>
-            <span className={styles.logoSubtitle}>LMS Coordinator</span>
+            <span className={styles.logoSubtitle}>The Seer</span>
           </div>
         )}
       </div>
