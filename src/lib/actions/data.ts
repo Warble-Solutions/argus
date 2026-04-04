@@ -197,3 +197,80 @@ export async function getTeamMembers() {
   if (error) throw new Error(error.message)
   return data || []
 }
+
+export async function getApprovals(filter: 'pending' | 'reviewed' | 'all' = 'all') {
+  const supabase = await createClient()
+  let query = supabase
+    .from('approvals')
+    .select('*, profiles!approvals_requested_by_fkey(full_name, role, email)')
+    .order('created_at', { ascending: false })
+
+  if (filter === 'pending') {
+    query = query.eq('status', 'pending')
+  } else if (filter === 'reviewed') {
+    query = query.neq('status', 'pending')
+  }
+
+  const { data, error } = await query
+  if (error) throw new Error(error.message)
+  return data || []
+}
+
+export async function approveRequest(approvalId: string, feedback?: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
+
+  const { error } = await supabase
+    .from('approvals')
+    .update({
+      status: 'approved',
+      reviewed_by: user.id,
+      feedback: feedback || null,
+    })
+    .eq('id', approvalId)
+
+  if (error) throw new Error(error.message)
+
+  // If this is an intern task approval, create the actual task
+  const { data: approval } = await supabase
+    .from('approvals')
+    .select('*')
+    .eq('id', approvalId)
+    .single()
+
+  if (approval?.type === 'intern_task' && approval.metadata) {
+    const meta = approval.metadata as Record<string, string>
+    await supabase.from('tasks').insert({
+      module_id: meta.module_id,
+      title: approval.title,
+      description: approval.description,
+      task_type: meta.task_type || 'general',
+      priority: meta.priority || 'medium',
+      assigned_to: approval.requested_by,
+      created_by: user.id,
+    })
+  }
+
+  revalidatePath('/approvals')
+}
+
+export async function rejectRequest(approvalId: string, feedback: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
+
+  if (!feedback.trim()) throw new Error('Feedback is required when rejecting')
+
+  const { error } = await supabase
+    .from('approvals')
+    .update({
+      status: 'rejected',
+      reviewed_by: user.id,
+      feedback,
+    })
+    .eq('id', approvalId)
+
+  if (error) throw new Error(error.message)
+  revalidatePath('/approvals')
+}

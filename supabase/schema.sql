@@ -107,6 +107,7 @@ CREATE TABLE public.approvals (
   reviewed_by UUID REFERENCES public.profiles(id),
   title TEXT NOT NULL,
   description TEXT,
+  feedback TEXT,
   metadata JSONB DEFAULT '{}',
   -- For stage_gate approvals
   module_id UUID REFERENCES public.modules(id) ON DELETE CASCADE,
