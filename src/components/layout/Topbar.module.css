@@ -36,50 +36,31 @@
   color: var(--color-text-primary);
 }
 
-.searchBar {
+/* Seeker Trigger */
+.searchBtn {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  width: 100%;
   padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-lg);
+  color: var(--color-text-muted);
   background: var(--color-bg-input);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
   transition: all var(--transition-fast);
+  cursor: pointer;
 }
 
-.searchBar:focus-within {
-  border-color: var(--color-accent-blue);
-  box-shadow: 0 0 0 3px var(--color-accent-blue-glow);
-}
-
-.searchIcon {
-  color: var(--color-text-muted);
-  flex-shrink: 0;
-}
-
-.searchInput {
-  flex: 1;
-  background: none;
-  border: none;
-  outline: none;
+.searchBtn:hover {
+  border-color: rgba(148, 163, 184, 0.25);
+  background: rgba(30, 41, 59, 0.6);
   color: var(--color-text-primary);
-  font-size: var(--text-sm);
 }
 
-.searchInput::placeholder {
-  color: var(--color-text-muted);
-}
-
-.searchShortcut {
+.searchLabel {
   font-size: 11px;
-  color: var(--color-text-muted);
-  background: var(--color-bg-tertiary);
-  padding: 2px 6px;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--color-border);
   font-family: var(--font-mono);
-  flex-shrink: 0;
+  color: var(--color-text-muted);
+  white-space: nowrap;
 }
 
 .right {
@@ -274,10 +255,6 @@
   .topbar {
     left: 0;
     padding: 0 var(--space-4);
-  }
-
-  .searchShortcut {
-    display: none;
   }
 
   .notifPanel {
