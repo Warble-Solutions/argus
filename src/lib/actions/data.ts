@@ -280,6 +280,36 @@ export async function getTeamMembers() {
   return data || []
 }
 
+export async function getMemberProfile(memberId: string) {
+  const supabase = await createClient()
+
+  const [profileRes, projectsRes, tasksRes] = await Promise.all([
+    supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', memberId)
+      .single(),
+    supabase
+      .from('project_members')
+      .select('role, project_id, projects!project_members_project_id_fkey(id, name, client_name, status, deadline)')
+      .eq('user_id', memberId),
+    supabase
+      .from('tasks')
+      .select('id, title, status, priority, created_at, modules!tasks_module_id_fkey(title, project_id, projects!modules_project_id_fkey(name))')
+      .eq('assigned_to', memberId)
+      .order('created_at', { ascending: false })
+      .limit(10),
+  ])
+
+  if (profileRes.error) throw new Error(profileRes.error.message)
+
+  return {
+    profile: profileRes.data,
+    projects: projectsRes.data || [],
+    recentTasks: tasksRes.data || [],
+  }
+}
+
 export async function getApprovals(filter: 'pending' | 'reviewed' | 'all' = 'all') {
   const supabase = await createClient()
   let query = supabase

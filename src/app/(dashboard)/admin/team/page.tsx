@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { Users, UserPlus, Shield, Award } from 'lucide-react'
 import { getTeamMembers } from '@/lib/actions/data'
 import { getInitials } from '@/lib/utils'
@@ -86,9 +87,9 @@ export default async function TeamPage() {
                     </td>
                     <td>
                       <div className="flex-row gap-2">
-                        <button className="btn btn-ghost btn-sm" title="View Profile">
+                        <Link href={`/admin/team/${user.id}`} className="btn btn-ghost btn-sm" title="View Profile">
                           <Award size={14} />
-                        </button>
+                        </Link>
                       </div>
                     </td>
                   </tr>

@@ -131,7 +131,7 @@ export default function Seeker({ isOpen, onClose }: SeekerProps) {
         })),
         ...results.people.map(p => ({
           type: 'person' as const, id: p.id, title: p.full_name, subtitle: p.email,
-          href: `/admin/team`, icon: 'person' as const,
+          href: `/admin/team/${p.id}`, icon: 'person' as const,
           badge: p.role, badgeClass: p.role === 'admin' ? 'badge-red' : p.role === 'manager' ? 'badge-amber' : 'badge-blue',
         })),
       ]
