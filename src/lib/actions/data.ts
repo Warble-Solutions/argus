@@ -441,6 +441,19 @@ export async function addProjectMember(projectId: string, userId: string, projec
   }, { onConflict: 'project_id,user_id' })
 
   if (error) throw new Error(error.message)
+
+  // Send notification to the added member
+  const { data: project } = await supabase.from('projects').select('name').eq('id', projectId).single()
+  if (project) {
+    await createNotification(
+      userId,
+      `Added to ${project.name}`,
+      `You've been added as a ${projectRole} to the project "${project.name}".`,
+      'assignment',
+      `/projects/${projectId}`
+    )
+  }
+
   revalidatePath(`/projects/${projectId}`)
 }
 
@@ -479,4 +492,80 @@ export async function getUserProjectRole(projectId: string): Promise<string | nu
     .single()
 
   return membership?.project_role || null
+}
+
+// ============================================
+// NOTIFICATIONS
+// ============================================
+
+export async function getNotifications(limit = 20) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return []
+
+  const { data, error } = await supabase
+    .from('notifications')
+    .select('*')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false })
+    .limit(limit)
+
+  if (error) throw new Error(error.message)
+  return data || []
+}
+
+export async function getUnreadCount(): Promise<number> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return 0
+
+  const { count, error } = await supabase
+    .from('notifications')
+    .select('id', { count: 'exact', head: true })
+    .eq('user_id', user.id)
+    .eq('is_read', false)
+
+  if (error) return 0
+  return count || 0
+}
+
+export async function markNotificationRead(notifId: string) {
+  const supabase = await createClient()
+  const { error } = await supabase
+    .from('notifications')
+    .update({ is_read: true })
+    .eq('id', notifId)
+
+  if (error) throw new Error(error.message)
+  revalidatePath('/', 'layout')
+}
+
+export async function markAllNotificationsRead() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return
+
+  const { error } = await supabase
+    .from('notifications')
+    .update({ is_read: true })
+    .eq('user_id', user.id)
+    .eq('is_read', false)
+
+  if (error) throw new Error(error.message)
+  revalidatePath('/', 'layout')
+}
+
+export async function createNotification(
+  userId: string,
+  title: string,
+  message: string,
+  type: 'assignment' | 'deadline' | 'approval' | 'stage_gate' | 'general',
+  link?: string
+) {
+  const supabase = await createClient()
+  const { error } = await supabase
+    .from('notifications')
+    .insert({ user_id: userId, title, message, type, link })
+
+  if (error) throw new Error(error.message)
 }
