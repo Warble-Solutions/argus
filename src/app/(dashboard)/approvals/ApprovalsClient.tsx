@@ -121,8 +121,8 @@ export default function ApprovalsClient({ approvals }: ApprovalsClientProps) {
                 {/* Header */}
                 <div className={styles.approvalHeader}>
                   <div className={styles.approvalType}>
-                    <span className={`badge ${approval.type === 'intern_task' ? 'badge-blue' : 'badge-amber'}`}>
-                      {approval.type === 'intern_task' ? '📝 Task Request' : '🔒 Stage Gate'}
+                    <span className={`badge ${approval.type === 'intern_task' ? 'badge-blue' : approval.type === 'task_completion' ? 'badge-purple' : 'badge-amber'}`}>
+                      {approval.type === 'intern_task' ? '📝 Task Request' : approval.type === 'task_completion' ? '✅ Task Review' : '🔒 Stage Gate'}
                     </span>
                     {!isPendingItem && (
                       <span className={`badge ${approval.status === 'approved' ? 'badge-emerald' : 'badge-red'}`}>

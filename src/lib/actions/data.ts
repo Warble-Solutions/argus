@@ -8,17 +8,30 @@ export async function createProject(formData: FormData) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('Not authenticated')
 
-  const { error } = await supabase.from('projects').insert({
+  const { data: project, error } = await supabase.from('projects').insert({
     name: formData.get('name') as string,
     client_name: formData.get('client_name') as string,
     client_email: (formData.get('client_email') as string) || null,
     description: (formData.get('description') as string) || null,
     deadline: formData.get('deadline') as string,
     created_by: user.id,
-  })
+  }).select('id').single()
 
   if (error) throw new Error(error.message)
+
+  // Add project leads
+  const leadIds = formData.getAll('lead_ids') as string[]
+  if (project && leadIds.length > 0) {
+    const members = leadIds.map(uid => ({
+      project_id: project.id,
+      user_id: uid,
+      project_role: 'lead' as const,
+    }))
+    await supabase.from('project_members').insert(members)
+  }
+
   revalidatePath('/projects')
+  return project
 }
 
 export async function getProjects() {
@@ -137,6 +150,75 @@ export async function getTasksByModule(moduleId: string) {
 
 export async function updateTaskStatus(taskId: string, status: string) {
   const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
+
+  // If setting to 'done', check if user can self-approve
+  if (status === 'done') {
+    const { data: task } = await supabase
+      .from('tasks')
+      .select('*, modules!tasks_module_id_fkey(project_id)')
+      .eq('id', taskId)
+      .single()
+
+    if (!task) throw new Error('Task not found')
+    const projectId = (task.modules as any)?.project_id
+
+    // Check if user is admin, manager, or project lead — they can self-approve
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single()
+
+    const isGlobalManager = profile?.role === 'admin' || profile?.role === 'manager'
+
+    let isProjectLead = false
+    if (projectId) {
+      const { data: membership } = await supabase
+        .from('project_members')
+        .select('project_role')
+        .eq('project_id', projectId)
+        .eq('user_id', user.id)
+        .single()
+      isProjectLead = membership?.project_role === 'lead'
+    }
+
+    if (isGlobalManager || isProjectLead) {
+      // Can self-approve — set directly to done
+      const { error } = await supabase
+        .from('tasks')
+        .update({ status: 'done' })
+        .eq('id', taskId)
+      if (error) throw new Error(error.message)
+    } else {
+      // Must go through review — set to pending_review and create approval
+      const { error } = await supabase
+        .from('tasks')
+        .update({ status: 'pending_review' })
+        .eq('id', taskId)
+      if (error) throw new Error(error.message)
+
+      await supabase.from('approvals').insert({
+        type: 'task_completion',
+        requested_by: user.id,
+        title: task.title,
+        description: `Task completion review for: ${task.title}`,
+        project_id: projectId,
+        task_id: taskId,
+        metadata: {
+          module_id: task.module_id,
+          task_type: task.task_type,
+          assigned_to: task.assigned_to,
+        },
+      })
+
+      revalidatePath('/approvals')
+    }
+    return
+  }
+
+  // For all other status changes, just update directly
   const { error } = await supabase
     .from('tasks')
     .update({ status })
@@ -221,6 +303,16 @@ export async function approveRequest(approvalId: string, feedback?: string) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('Not authenticated')
 
+  // Fetch the approval first
+  const { data: approval } = await supabase
+    .from('approvals')
+    .select('*')
+    .eq('id', approvalId)
+    .single()
+
+  if (!approval) throw new Error('Approval not found')
+
+  // Update approval status
   const { error } = await supabase
     .from('approvals')
     .update({
@@ -232,14 +324,8 @@ export async function approveRequest(approvalId: string, feedback?: string) {
 
   if (error) throw new Error(error.message)
 
-  // If this is an intern task approval, create the actual task
-  const { data: approval } = await supabase
-    .from('approvals')
-    .select('*')
-    .eq('id', approvalId)
-    .single()
-
-  if (approval?.type === 'intern_task' && approval.metadata) {
+  // Handle side effects based on type
+  if (approval.type === 'intern_task' && approval.metadata) {
     const meta = approval.metadata as Record<string, string>
     await supabase.from('tasks').insert({
       module_id: meta.module_id,
@@ -250,9 +336,16 @@ export async function approveRequest(approvalId: string, feedback?: string) {
       assigned_to: approval.requested_by,
       created_by: user.id,
     })
+  } else if (approval.type === 'task_completion' && approval.task_id) {
+    // Set the task to done
+    await supabase
+      .from('tasks')
+      .update({ status: 'done' })
+      .eq('id', approval.task_id)
   }
 
   revalidatePath('/approvals')
+  revalidatePath('/projects')
 }
 
 export async function rejectRequest(approvalId: string, feedback: string) {
@@ -262,6 +355,14 @@ export async function rejectRequest(approvalId: string, feedback: string) {
 
   if (!feedback.trim()) throw new Error('Feedback is required when rejecting')
 
+  // Fetch the approval first
+  const { data: approval } = await supabase
+    .from('approvals')
+    .select('*')
+    .eq('id', approvalId)
+    .single()
+
+  // Update approval status
   const { error } = await supabase
     .from('approvals')
     .update({
@@ -272,5 +373,80 @@ export async function rejectRequest(approvalId: string, feedback: string) {
     .eq('id', approvalId)
 
   if (error) throw new Error(error.message)
+
+  // If task_completion, set task back to revision
+  if (approval?.type === 'task_completion' && approval.task_id) {
+    await supabase
+      .from('tasks')
+      .update({ status: 'revision' })
+      .eq('id', approval.task_id)
+  }
+
   revalidatePath('/approvals')
+  revalidatePath('/projects')
+}
+
+// ============================================
+// PROJECT MEMBERS
+// ============================================
+
+export async function getProjectMembers(projectId: string) {
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from('project_members')
+    .select('*, profiles!project_members_user_id_fkey(id, full_name, email, role, avatar_url)')
+    .eq('project_id', projectId)
+    .order('created_at', { ascending: true })
+
+  if (error) throw new Error(error.message)
+  return data || []
+}
+
+export async function addProjectMember(projectId: string, userId: string, projectRole: string = 'member') {
+  const supabase = await createClient()
+  const { error } = await supabase.from('project_members').upsert({
+    project_id: projectId,
+    user_id: userId,
+    project_role: projectRole,
+  }, { onConflict: 'project_id,user_id' })
+
+  if (error) throw new Error(error.message)
+  revalidatePath(`/projects/${projectId}`)
+}
+
+export async function removeProjectMember(projectId: string, userId: string) {
+  const supabase = await createClient()
+  const { error } = await supabase
+    .from('project_members')
+    .delete()
+    .eq('project_id', projectId)
+    .eq('user_id', userId)
+
+  if (error) throw new Error(error.message)
+  revalidatePath(`/projects/${projectId}`)
+}
+
+export async function getUserProjectRole(projectId: string): Promise<string | null> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return null
+
+  // Check global role first
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single()
+
+  if (profile?.role === 'admin' || profile?.role === 'manager') return 'manager'
+
+  // Check project-specific role
+  const { data: membership } = await supabase
+    .from('project_members')
+    .select('project_role')
+    .eq('project_id', projectId)
+    .eq('user_id', user.id)
+    .single()
+
+  return membership?.project_role || null
 }

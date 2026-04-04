@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useTransition, useMemo, useRef, useEffect } from 'react'
 import Link from 'next/link'
-import { Plus, ArrowRight, Calendar, FolderKanban } from 'lucide-react'
+import { Plus, ArrowRight, Calendar, FolderKanban, Search, X, Shield } from 'lucide-react'
 import Modal from '@/components/ui/Modal'
 import { createProject } from '@/lib/actions/data'
 import { formatDate, getDeadlineStatus, getInitials } from '@/lib/utils'
@@ -20,28 +20,85 @@ interface Project {
   profiles?: { full_name: string } | null
 }
 
-interface ProjectsClientProps {
-  projects: Project[]
+interface TeamMember {
+  id: string
+  full_name: string
+  email: string
+  role: string
 }
 
-export default function ProjectsClient({ projects }: ProjectsClientProps) {
+interface ProjectsClientProps {
+  projects: Project[]
+  teamMembers: TeamMember[]
+}
+
+export default function ProjectsClient({ projects, teamMembers }: ProjectsClientProps) {
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState('')
+
+  // Lead selector state
+  const [selectedLeads, setSelectedLeads] = useState<TeamMember[]>([])
+  const [leadSearch, setLeadSearch] = useState('')
+  const [showLeadDropdown, setShowLeadDropdown] = useState(false)
+  const dropdownRef = useRef<HTMLDivElement>(null)
+
+  const filteredMembers = useMemo(() => {
+    return teamMembers.filter(m =>
+      !selectedLeads.find(s => s.id === m.id) &&
+      (m.full_name.toLowerCase().includes(leadSearch.toLowerCase()) ||
+       m.email.toLowerCase().includes(leadSearch.toLowerCase()))
+    )
+  }, [teamMembers, selectedLeads, leadSearch])
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setShowLeadDropdown(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  const addLead = (member: TeamMember) => {
+    setSelectedLeads(prev => [...prev, member])
+    setLeadSearch('')
+    setShowLeadDropdown(false)
+  }
+
+  const removeLead = (id: string) => {
+    setSelectedLeads(prev => prev.filter(m => m.id !== id))
+  }
 
   const handleCreate = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setError('')
     const formData = new FormData(e.currentTarget)
 
+    // Append selected lead IDs
+    selectedLeads.forEach(lead => {
+      formData.append('lead_ids', lead.id)
+    })
+
     startTransition(async () => {
       try {
         await createProject(formData)
         setShowCreateModal(false)
+        setSelectedLeads([])
+        setLeadSearch('')
       } catch (err: any) {
         setError(err.message || 'Failed to create project')
       }
     })
+  }
+
+  const roleColors: Record<string, string> = {
+    admin: 'badge-red',
+    manager: 'badge-amber',
+    employee: 'badge-blue',
+    intern: 'badge-purple',
   }
 
   return (
@@ -139,11 +196,11 @@ export default function ProjectsClient({ projects }: ProjectsClientProps) {
       {/* Create Project Modal */}
       <Modal
         isOpen={showCreateModal}
-        onClose={() => setShowCreateModal(false)}
+        onClose={() => { setShowCreateModal(false); setSelectedLeads([]); setLeadSearch('') }}
         title="Create New Project"
         footer={
           <>
-            <button className="btn btn-ghost" onClick={() => setShowCreateModal(false)}>Cancel</button>
+            <button className="btn btn-ghost" onClick={() => { setShowCreateModal(false); setSelectedLeads([]); setLeadSearch('') }}>Cancel</button>
             <button className="btn btn-primary" form="create-project-form" type="submit" disabled={isPending}>
               {isPending ? 'Creating...' : 'Create Project'}
             </button>
@@ -173,6 +230,72 @@ export default function ProjectsClient({ projects }: ProjectsClientProps) {
           <div className="input-group">
             <label htmlFor="project-deadline" className="input-label">Deadline *</label>
             <input id="project-deadline" name="deadline" type="date" className="input-field" required />
+          </div>
+
+          {/* Searchable Lead Selector */}
+          <div className="input-group" ref={dropdownRef}>
+            <label className="input-label">
+              <Shield size={14} style={{ display: 'inline', verticalAlign: '-2px', marginRight: '4px' }} />
+              Project Lead(s)
+            </label>
+
+            {/* Selected leads chips */}
+            {selectedLeads.length > 0 && (
+              <div className={styles.selectedLeads}>
+                {selectedLeads.map(lead => (
+                  <span key={lead.id} className={styles.leadChip}>
+                    <span className="avatar avatar-sm" style={{ width: 20, height: 20, fontSize: '9px' }}>
+                      {getInitials(lead.full_name)}
+                    </span>
+                    {lead.full_name}
+                    <button type="button" className={styles.chipRemove} onClick={() => removeLead(lead.id)}>
+                      <X size={12} />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+
+            {/* Search input */}
+            <div className={styles.searchInputWrapper}>
+              <Search size={14} className={styles.searchIcon} />
+              <input
+                type="text"
+                className="input-field"
+                placeholder="Search team members to add as lead..."
+                value={leadSearch}
+                onChange={e => { setLeadSearch(e.target.value); setShowLeadDropdown(true) }}
+                onFocus={() => setShowLeadDropdown(true)}
+                style={{ paddingLeft: 'var(--space-8)' }}
+              />
+            </div>
+
+            {/* Dropdown */}
+            {showLeadDropdown && (
+              <div className={styles.leadDropdown}>
+                {filteredMembers.length === 0 ? (
+                  <div className={styles.dropdownEmpty}>
+                    {leadSearch ? 'No matches found' : 'All members selected'}
+                  </div>
+                ) : (
+                  filteredMembers.map(member => (
+                    <button
+                      key={member.id}
+                      type="button"
+                      className={styles.dropdownItem}
+                      onClick={() => addLead(member)}
+                    >
+                      <div className="avatar avatar-sm">{getInitials(member.full_name)}</div>
+                      <div className={styles.dropdownInfo}>
+                        <span className={styles.dropdownName}>{member.full_name}</span>
+                        <span className={styles.dropdownEmail}>{member.email}</span>
+                      </div>
+                      <span className={`badge ${roleColors[member.role] || 'badge-neutral'}`}>{member.role}</span>
+                    </button>
+                  ))
+                )}
+              </div>
+            )}
           </div>
         </form>
       </Modal>

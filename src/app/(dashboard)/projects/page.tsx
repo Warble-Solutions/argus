@@ -1,7 +1,7 @@
-import { getProjects } from '@/lib/actions/data'
+import { getProjects, getTeamMembers } from '@/lib/actions/data'
 import ProjectsClient from './ProjectsClient'
 
 export default async function ProjectsPage() {
-  const projects = await getProjects()
-  return <ProjectsClient projects={projects} />
+  const [projects, teamMembers] = await Promise.all([getProjects(), getTeamMembers()])
+  return <ProjectsClient projects={projects} teamMembers={teamMembers} />
 }

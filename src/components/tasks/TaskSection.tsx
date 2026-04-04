@@ -117,6 +117,12 @@ export default function TaskSection({ tasks, moduleId, userRole = 'manager', tea
                         <Clock size={11} /> {formatMinutes(task.time_spent_minutes || 0)}
                       </span>
                     )}
+                    {task.status === 'pending_review' && (
+                      <span className="badge badge-amber">⏳ Pending Review</span>
+                    )}
+                    {task.status === 'revision' && (
+                      <span className="badge badge-purple">🔄 Revision Needed</span>
+                    )}
                   </div>
                 </div>
                 <div className={styles.taskRight}>
@@ -125,11 +131,14 @@ export default function TaskSection({ tasks, moduleId, userRole = 'manager', tea
                     defaultValue={task.status}
                     onChange={(e) => handleStatusChange(task.id, e.target.value)}
                     aria-label={`Status for ${task.title}`}
+                    disabled={task.status === 'pending_review'}
                   >
                     <option value="todo">To Do</option>
                     <option value="in_progress">In Progress</option>
                     <option value="done">Done</option>
                     <option value="blocked">Blocked</option>
+                    {task.status === 'pending_review' && <option value="pending_review">Pending Review</option>}
+                    {task.status === 'revision' && <option value="revision">Revision</option>}
                   </select>
                   {assigneeName && (
                     <div className="avatar avatar-sm" title={assigneeName}>
