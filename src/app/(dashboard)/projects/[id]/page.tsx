@@ -1,15 +1,19 @@
 import Link from 'next/link'
 import { ArrowLeft, Calendar } from 'lucide-react'
-import { getProjectById, getModulesByProject, getTeamMembers } from '@/lib/actions/data'
+import { getProjectById, getModulesByProject, getTeamMembers, getProjectMembers } from '@/lib/actions/data'
 import { formatDate, getDeadlineStatus } from '@/lib/utils'
 import ModulesTable from '@/components/projects/ModulesTable'
+import ProjectTeam from '@/components/projects/ProjectTeam'
 import styles from './page.module.css'
 
 export default async function ProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const project = await getProjectById(id)
   const modules = await getModulesByProject(id)
-  const teamMembers = await getTeamMembers()
+  const [teamMembers, projectMembers] = await Promise.all([
+    getTeamMembers(),
+    getProjectMembers(id),
+  ])
 
   if (!project) {
     return (
@@ -74,6 +78,17 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
           nextModuleNumber={nextModuleNumber}
           teamMembers={teamMembers}
         />
+      </div>
+
+      {/* Team Section */}
+      <div className="card" style={{ marginTop: 'var(--space-6)' }}>
+        <div className="card-body">
+          <ProjectTeam
+            projectId={project.id}
+            members={projectMembers}
+            allTeamMembers={teamMembers}
+          />
+        </div>
       </div>
     </div>
   )
