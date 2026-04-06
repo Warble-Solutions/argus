@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard,
-  MessageSquare,
+  Sparkles,
   FolderKanban,
   FileUp,
   Mail,
@@ -33,7 +33,7 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { label: 'Dashboard', href: '/', icon: <LayoutDashboard size={20} /> },
-  { label: 'Chat', href: '/chat', icon: <MessageSquare size={20} /> },
+  { label: 'Oracle', href: '/chat', icon: <Sparkles size={20} /> },
   { label: 'Projects', href: '/projects', icon: <FolderKanban size={20} /> },
   { label: 'Approvals', href: '/approvals', icon: <ClipboardCheck size={20} /> },
   { label: 'Files', href: '/files', icon: <FileUp size={20} /> },
