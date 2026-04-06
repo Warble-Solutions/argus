@@ -47,17 +47,23 @@ const typeIcon: Record<string, string> = {
 export default function Topbar({ user, notifications = [], unreadCount = 0 }: TopbarProps) {
   const [showNotifications, setShowNotifications] = useState(false)
   const [showSeeker, setShowSeeker] = useState(false)
+  const [seekerMode, setSeekerMode] = useState<'search' | 'ai'>('search')
   const [isPending, startTransition] = useTransition()
   const panelRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
 
   const userName = user?.full_name || 'User'
 
-  // Global keyboard shortcut: Cmd+K / Ctrl+K
+  // Global keyboard shortcut: Cmd+K / Ctrl+K = Search, Cmd+Shift+K / Ctrl+Shift+K = AI
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault()
+        if (e.shiftKey) {
+          setSeekerMode('ai')
+        } else {
+          setSeekerMode('search')
+        }
         setShowSeeker(true)
       }
     }
@@ -105,7 +111,7 @@ export default function Topbar({ user, notifications = [], unreadCount = 0 }: To
           </button>
           <button
             className={styles.searchBtn}
-            onClick={() => setShowSeeker(true)}
+            onClick={() => { setSeekerMode('search'); setShowSeeker(true) }}
             aria-label="Open Seeker search"
             id="seeker-trigger"
           >
@@ -181,7 +187,7 @@ export default function Topbar({ user, notifications = [], unreadCount = 0 }: To
       </header>
 
       {/* Seeker Modal */}
-      <Seeker isOpen={showSeeker} onClose={() => setShowSeeker(false)} />
+      <Seeker isOpen={showSeeker} onClose={() => setShowSeeker(false)} initialMode={seekerMode} />
     </>
   )
 }

@@ -1,30 +1,48 @@
-import { FolderOpen, Upload, Search } from 'lucide-react'
+import { createClient } from '@/lib/supabase/server'
+import { getDriveConnectionInfo } from '@/lib/google/drive'
+import FilesClient from './FilesClient'
 
-export default function FilesPage() {
+export default async function FilesPage() {
+  const supabase = await createClient()
+
+  // Get Drive connection status
+  let driveInfo = null
+  try {
+    driveInfo = await getDriveConnectionInfo()
+  } catch {}
+
+  // Get projects for the file browser
+  const { data: projects } = await supabase
+    .from('projects')
+    .select('id, name, client_name, drive_folder_id')
+    .order('name')
+
+  // Get recent files
+  const { data: recentFiles } = await supabase
+    .from('drive_files')
+    .select('*, profiles!drive_files_uploaded_by_fkey(full_name), projects!drive_files_project_id_fkey(name), modules!drive_files_module_id_fkey(title, module_number)')
+    .order('created_at', { ascending: false })
+    .limit(20)
+
+  // Get user role
+  const { data: { user } } = await supabase.auth.getUser()
+  let userRole = 'employee'
+  if (user) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single()
+    userRole = profile?.role || 'employee'
+  }
+
   return (
-    <div className="page-container">
-      <div className="page-header">
-        <div>
-          <h1 className="page-title">File Manager</h1>
-          <p className="page-subtitle">Browse and upload files to Google Drive</p>
-        </div>
-        <button className="btn btn-primary" id="upload-btn">
-          <Upload size={16} /> Upload Files
-        </button>
-      </div>
-
-      <div className="card">
-        <div className="empty-state">
-          <FolderOpen size={48} className="empty-state-icon" />
-          <h2 className="empty-state-title">Connect Google Drive</h2>
-          <p className="empty-state-desc">
-            Connect your Google Drive account to browse, upload, and manage LMS production files directly from Argus.
-          </p>
-          <button className="btn btn-primary">
-            Connect Google Drive
-          </button>
-        </div>
-      </div>
-    </div>
+    <FilesClient
+      driveConnected={!!driveInfo?.connected}
+      driveEmail={driveInfo?.email || null}
+      projects={projects || []}
+      recentFiles={recentFiles || []}
+      userRole={userRole}
+    />
   )
 }

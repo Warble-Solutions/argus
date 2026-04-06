@@ -1,7 +1,15 @@
-import { Settings, HardDrive, Mail, Bell, FileText, Shield } from 'lucide-react'
+import { HardDrive, Mail, Bell, Shield, CheckCircle } from 'lucide-react'
+import { getDriveConnectionInfo } from '@/lib/google/drive'
 import styles from './page.module.css'
 
-export default function SettingsPage() {
+export default async function SettingsPage() {
+  let driveInfo: { connected: boolean; email?: string | null; connectedAt?: string | null; rootFolderId?: string | null } | null = null
+  try {
+    driveInfo = await getDriveConnectionInfo()
+  } catch {}
+
+  const isConnected = !!driveInfo?.connected
+
   return (
     <div className="page-container">
       <div className="page-header">
@@ -20,25 +28,36 @@ export default function SettingsPage() {
             </h2>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
-            <div className="input-group">
-              <label className="input-label">Root Folder Name</label>
-              <input
-                type="text"
-                className="input-field"
-                defaultValue="Argus_LMS_Production"
-                placeholder="Root folder name in Google Drive"
-              />
-              <p className="text-tiny text-dim" style={{ marginTop: 'var(--space-1)' }}>
-                All project folders will be created under this root folder.
-              </p>
-            </div>
-            <div className={styles.connectionStatus}>
-              <span className="text-small text-muted">Connection Status:</span>
-              <span className="badge badge-amber">Not Connected</span>
-            </div>
-            <button className="btn btn-primary" style={{ alignSelf: 'flex-start' }}>
-              Connect Google Drive
-            </button>
+            {isConnected ? (
+              <>
+                <div className={styles.connectionStatus}>
+                  <span className="text-small text-muted">Connection Status:</span>
+                  <span className="badge badge-emerald">
+                    <CheckCircle size={12} style={{ marginRight: 4 }} /> Connected
+                  </span>
+                </div>
+                <div className={styles.connectionStatus}>
+                  <span className="text-small text-muted">Connected Account:</span>
+                  <span className="text-small">{driveInfo?.email || 'Unknown'}</span>
+                </div>
+                <p className="text-tiny text-dim">
+                  Files are automatically organized in the &quot;Argus Projects&quot; folder in your Drive.
+                </p>
+              </>
+            ) : (
+              <>
+                <div className={styles.connectionStatus}>
+                  <span className="text-small text-muted">Connection Status:</span>
+                  <span className="badge badge-amber">Not Connected</span>
+                </div>
+                <p className="text-tiny text-dim">
+                  Connect your Google Drive to enable automatic folder creation and file management for all projects.
+                </p>
+                <a href="/api/drive/connect" className="btn btn-primary" style={{ alignSelf: 'flex-start' }}>
+                  Connect Google Drive
+                </a>
+              </>
+            )}
           </div>
         </div>
 

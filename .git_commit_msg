@@ -1,0 +1,7 @@
+feat: complete Phase 2 integrations (Drive, AI, Smart Deadlines)
+
+- **Google Drive Integration**: Implemented full OAuth 2.0 flow for Admin to authenticate a master 30TB connected Drive. Added automated routing that maps `Client/Project/Module_XX/` dynamic folder structures. Built visual file manager in `/files` with thumbnail previews, extension badges, drag-and-drop, and filtering.
+- **Seeker AI Agent**: Expanded the Vercel AI SDK + Google Gemini slide-out assistant. Agent now performs Supabase function calling for tracking tasks, projects, files, overdue items, and can dynamically `createTask`, `updateTaskStatus`, and `updateTaskDeadline` based on active user Role Level Permissions.
+- **Smart Deadlines & Timezone Refactoring**: Refactored `utils.ts` and `DateTimePicker.tsx` to strictly parse and store deadline values mapped to global IST (+05:30) overriding local client browser behavior. 
+- **Automated Alerts (pg_cron)**: Created `migration_smarter_deadlines.sql` hook to run dynamic Postgres checks every 15 mins for intelligent notification distributions based on 48-hour warnings and sub-4-hour urgent escalations.
+- **README Updates**: Rebuilt documentation to formally cover the completed status of Phase 1 and 2, updating features, environment variables, roadmap, and routing mappings.

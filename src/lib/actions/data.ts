@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
+import { isDriveConnected, ensureRootFolder, createProjectFolders, createModuleFolder } from '@/lib/google/drive'
 
 export async function createProject(formData: FormData) {
   const supabase = await createClient()
@@ -15,7 +16,7 @@ export async function createProject(formData: FormData) {
     description: (formData.get('description') as string) || null,
     deadline: formData.get('deadline') as string,
     created_by: user.id,
-  }).select('id').single()
+  }).select('id, name, client_name').single()
 
   if (error) throw new Error(error.message)
 
@@ -28,6 +29,21 @@ export async function createProject(formData: FormData) {
       project_role: 'lead' as const,
     }))
     await supabase.from('project_members').insert(members)
+  }
+
+  // Auto-create Drive folders (if connected)
+  try {
+    if (project && await isDriveConnected()) {
+      const rootId = await ensureRootFolder()
+      const projectFolderId = await createProjectFolders(
+        project.client_name,
+        project.name,
+        rootId
+      )
+      await supabase.from('projects').update({ drive_folder_id: projectFolderId }).eq('id', project.id)
+    }
+  } catch (driveErr) {
+    console.error('Drive folder creation failed (non-blocking):', driveErr)
   }
 
   revalidatePath('/projects')
@@ -62,20 +78,43 @@ export async function createModule(formData: FormData) {
 
   const projectId = formData.get('project_id') as string
   const moduleNumber = parseInt(formData.get('module_number') as string)
+  const title = formData.get('title') as string
 
-  const { error } = await supabase.from('modules').insert({
+  const { data: mod, error } = await supabase.from('modules').insert({
     project_id: projectId,
     module_number: moduleNumber,
-    title: formData.get('title') as string,
+    title,
     description: (formData.get('description') as string) || null,
     assigned_to: (formData.get('assigned_to') as string) || null,
     deadline: formData.get('deadline') as string,
-  })
+  }).select('id').single()
 
   if (error) throw new Error(error.message)
 
   // Update project modules count
   await supabase.rpc('increment_modules_count', { project_uuid: projectId })
+
+  // Auto-create Drive folder for module (if connected)
+  try {
+    if (mod && await isDriveConnected()) {
+      const { data: project } = await supabase
+        .from('projects')
+        .select('drive_folder_id')
+        .eq('id', projectId)
+        .single()
+
+      if (project?.drive_folder_id) {
+        const moduleFolderId = await createModuleFolder(
+          project.drive_folder_id,
+          moduleNumber,
+          title
+        )
+        await supabase.from('modules').update({ drive_folder_id: moduleFolderId }).eq('id', mod.id)
+      }
+    }
+  } catch (driveErr) {
+    console.error('Drive module folder creation failed (non-blocking):', driveErr)
+  }
 
   revalidatePath(`/projects/${projectId}`)
 }

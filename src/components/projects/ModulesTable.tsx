@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react'
 import Link from 'next/link'
 import { Plus, Lock, FolderOpen } from 'lucide-react'
 import Modal from '@/components/ui/Modal'
+import DateTimePicker from '@/components/ui/DateTimePicker'
 import { createModule } from '@/lib/actions/data'
 import { MODULE_STATUS_CONFIG, formatDate, getDaysUntil, getDeadlineStatus, getInitials } from '@/lib/utils'
 import styles from './ModulesTable.module.css'
@@ -165,7 +166,7 @@ export default function ModulesTable({ modules, projectId, nextModuleNumber, tea
             </div>
             <div className="input-group">
               <label htmlFor="module-deadline" className="input-label">Deadline *</label>
-              <input id="module-deadline" name="deadline" type="date" className="input-field" required />
+              <DateTimePicker id="module-deadline" name="deadline" className="input-field" required />
             </div>
           </div>
         </form>

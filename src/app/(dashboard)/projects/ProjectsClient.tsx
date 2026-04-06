@@ -4,6 +4,7 @@ import { useState, useTransition, useMemo, useRef, useEffect } from 'react'
 import Link from 'next/link'
 import { Plus, ArrowRight, Calendar, FolderKanban, Search, X, Shield } from 'lucide-react'
 import Modal from '@/components/ui/Modal'
+import DateTimePicker from '@/components/ui/DateTimePicker'
 import { createProject } from '@/lib/actions/data'
 import { formatDate, getDeadlineStatus, getInitials } from '@/lib/utils'
 import styles from './page.module.css'
@@ -229,7 +230,7 @@ export default function ProjectsClient({ projects, teamMembers }: ProjectsClient
           </div>
           <div className="input-group">
             <label htmlFor="project-deadline" className="input-label">Deadline *</label>
-            <input id="project-deadline" name="deadline" type="date" className="input-field" required />
+            <DateTimePicker id="project-deadline" name="deadline" className="input-field" required />
           </div>
 
           {/* Searchable Lead Selector */}

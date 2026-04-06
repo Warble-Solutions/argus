@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react'
 import { Plus, Clock, CheckCircle, Circle, AlertCircle, Send } from 'lucide-react'
 import Modal from '@/components/ui/Modal'
+import DateTimePicker from '@/components/ui/DateTimePicker'
 import { createTask, submitInternTask, updateTaskStatus } from '@/lib/actions/data'
 import { TASK_PRIORITY_CONFIG, getInitials, formatMinutes } from '@/lib/utils'
 import type { UserRole } from '@/types'
@@ -225,7 +226,7 @@ export default function TaskSection({ tasks, moduleId, userRole = 'manager', tea
               </div>
               <div className="input-group">
                 <label htmlFor="task-due" className="input-label">Due Date</label>
-                <input id="task-due" name="due_date" type="date" className="input-field" />
+                <DateTimePicker id="task-due" name="due_date" className="input-field" />
               </div>
             </div>
           )}

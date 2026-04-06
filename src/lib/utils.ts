@@ -47,9 +47,22 @@ export function getInitials(name: string): string {
 
 export function formatDate(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString('en-US', {
+    timeZone: 'Asia/Kolkata',
     month: 'short',
     day: 'numeric',
     year: 'numeric',
+  })
+}
+
+export function formatDateTime(dateStr: string): string {
+  return new Date(dateStr).toLocaleString('en-US', {
+    timeZone: 'Asia/Kolkata',
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
   })
 }
 
@@ -66,17 +79,25 @@ export function formatRelativeDate(dateStr: string): string {
   return formatDate(dateStr)
 }
 
-export function getDaysUntil(dateStr: string): number {
+export function getMinutesUntil(dateStr: string): number {
   const now = new Date()
   const date = new Date(dateStr)
-  return Math.ceil((date.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+  return Math.ceil((date.getTime() - now.getTime()) / (1000 * 60))
+}
+
+export function getHoursUntil(dateStr: string): number {
+  return Math.ceil(getMinutesUntil(dateStr) / 60)
+}
+
+export function getDaysUntil(dateStr: string): number {
+  return Math.ceil(getHoursUntil(dateStr) / 24)
 }
 
 export function getDeadlineStatus(dateStr: string): 'overdue' | 'urgent' | 'upcoming' | 'safe' {
-  const days = getDaysUntil(dateStr)
-  if (days < 0) return 'overdue'
-  if (days <= 2) return 'urgent'
-  if (days <= 7) return 'upcoming'
+  const hours = getHoursUntil(dateStr)
+  if (hours < 0) return 'overdue'
+  if (hours <= 48) return 'urgent'
+  if (hours <= 168) return 'upcoming' // 7 days
   return 'safe'
 }
 
