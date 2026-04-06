@@ -1,0 +1,111 @@
+.card {
+  background: var(--color-surface-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  margin: 12px 0;
+  width: 100%;
+  max-width: 400px;
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: rgba(245, 158, 11, 0.1);
+  color: var(--color-accent-amber);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.header h4 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.body {
+  padding: 16px;
+}
+
+.actionName {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text);
+  margin-bottom: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.dataPreview {
+  background: var(--color-bg);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+.dataRow {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.dataRow:last-child {
+  margin-bottom: 0;
+}
+
+.dataKey {
+  color: var(--color-text-muted);
+  min-width: 80px;
+}
+
+.dataValue {
+  color: var(--color-text);
+  font-weight: 500;
+}
+
+.footer {
+  display: flex;
+  gap: 8px;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.02);
+  border-top: 1px solid var(--color-border);
+  justify-content: flex-end;
+}
+
+.btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s;
+}
+
+.btnCancel {
+  background: transparent;
+  color: var(--color-text-muted);
+}
+.btnCancel:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--color-text);
+}
+
+.btnConfirm {
+  background: var(--color-accent-emerald);
+  color: white;
+}
+.btnConfirm:hover {
+  filter: brightness(1.1);
+}

@@ -177,8 +177,9 @@ export const createTask = tool({
     priority: z.enum(['low', 'medium', 'high', 'critical']).optional().describe('Task priority, defaults to medium'),
     assigneeName: z.string().optional().describe('Name of the person to assign the task to'),
     dueDate: z.string().optional().describe('Optional ISO date string for the deadline (e.g., "2026-04-10T15:00:00Z")'),
+    isConfirmed: z.boolean().optional().describe('Set to false first to propose the change to the user. MUST be true to actually write to the database.'),
   }),
-  execute: async ({ projectName, moduleTitle, taskTitle, priority, assigneeName, dueDate }) => {
+  execute: async ({ projectName, moduleTitle, taskTitle, priority, assigneeName, dueDate, isConfirmed }) => {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { error: 'Not authenticated' }
@@ -211,6 +212,22 @@ export const createTask = tool({
         .limit(1)
 
       if (people?.length) assigneeId = people[0].id
+    }
+
+    if (!isConfirmed) {
+      return {
+        dryRun: true,
+        actionType: 'createTask',
+        proposedData: {
+          title: taskTitle,
+          project: project.name,
+          module: mod.title,
+          priority: priority || 'medium',
+          assignedTo: assigneeName || 'Unassigned',
+          dueDate: dueDate || null,
+        },
+        message: 'Action proposed. Awaiting user confirmation.'
+      }
     }
 
     const { data: task, error } = await supabase.from('tasks').insert({
@@ -251,8 +268,9 @@ export const addMemberToProject = tool({
     projectName: z.string().describe('Name of the project'),
     memberName: z.string().describe('Name of the person to add'),
     projectRole: z.enum(['lead', 'member', 'intern']).describe('Role in the project'),
+    isConfirmed: z.boolean().optional().describe('Set to false first to propose the change. MUST be true to actually write to the database.'),
   }),
-  execute: async ({ projectName, memberName, projectRole }) => {
+  execute: async ({ projectName, memberName, projectRole, isConfirmed }) => {
     const supabase = await createClient()
 
     const { data: projects } = await supabase
@@ -303,8 +321,9 @@ export const updateTaskStatus = tool({
   inputSchema: z.object({
     taskTitle: z.string().describe('Title (or partial title) of the task to update'),
     newStatus: z.enum(['todo', 'in_progress', 'pending_review', 'done', 'blocked']).describe('New status'),
+    isConfirmed: z.boolean().optional().describe('Set to false first to propose the change. MUST be true to actually write to the database.'),
   }),
-  execute: async ({ taskTitle, newStatus }) => {
+  execute: async ({ taskTitle, newStatus, isConfirmed }) => {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { error: 'Not authenticated' }
@@ -319,6 +338,21 @@ export const updateTaskStatus = tool({
     const task = tasks[0] as any
 
     const oldStatus = task.status
+
+    if (!isConfirmed) {
+      return {
+        dryRun: true,
+        actionType: 'updateTaskStatus',
+        proposedData: {
+          task: task.title,
+          oldStatus,
+          newStatus,
+          project: task.modules?.projects?.name,
+          module: task.modules?.title,
+        },
+        message: 'Action proposed. Awaiting user confirmation.'
+      }
+    }
 
     const { error } = await supabase
       .from('tasks')
@@ -343,8 +377,9 @@ export const updateTaskDeadline = tool({
   inputSchema: z.object({
     taskTitle: z.string().describe('The title (or partial title) of the task to update'),
     newDueDate: z.string().describe('The new due date in ISO format (e.g., "2026-04-10T15:00:00Z")'),
+    isConfirmed: z.boolean().optional().describe('Set to false first to propose the change. MUST be true to actually write to the database.'),
   }),
-  execute: async ({ taskTitle, newDueDate }) => {
+  execute: async ({ taskTitle, newDueDate, isConfirmed }) => {
     const supabase = await createClient()
 
     const { data: tasks } = await supabase
@@ -355,6 +390,19 @@ export const updateTaskDeadline = tool({
 
     if (!tasks?.length) return { error: `Task "${taskTitle}" not found` }
     const task = tasks[0] as any
+
+    if (!isConfirmed) {
+      return {
+        dryRun: true,
+        actionType: 'updateTaskDeadline',
+        proposedData: {
+          task: task.title,
+          oldDueDate: task.due_date,
+          newDueDate,
+        },
+        message: 'Action proposed. Awaiting user confirmation.'
+      }
+    }
 
     const { error } = await supabase
       .from('tasks')
@@ -379,8 +427,9 @@ export const updateProjectDeadline = tool({
   inputSchema: z.object({
     projectName: z.string().describe('The name (or partial name) of the project to update'),
     newDeadline: z.string().describe('The new deadline in ISO format (e.g., "2026-04-10T15:00:00Z")'),
+    isConfirmed: z.boolean().optional().describe('Set to false first to propose the change. MUST be true to actually write to the database.'),
   }),
-  execute: async ({ projectName, newDeadline }) => {
+  execute: async ({ projectName, newDeadline, isConfirmed }) => {
     const supabase = await createClient()
 
     const { data: projects } = await supabase
@@ -391,6 +440,19 @@ export const updateProjectDeadline = tool({
 
     if (!projects?.length) return { error: `Project "${projectName}" not found` }
     const project = projects[0]
+
+    if (!isConfirmed) {
+      return {
+        dryRun: true,
+        actionType: 'updateProjectDeadline',
+        proposedData: {
+          project: project.name,
+          oldDeadline: project.deadline,
+          newDeadline,
+        },
+        message: 'Action proposed. Awaiting user confirmation.'
+      }
+    }
 
     const { error } = await supabase
       .from('projects')
