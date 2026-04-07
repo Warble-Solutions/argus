@@ -126,10 +126,10 @@ export const getOverdueItems = tool({
         .order('deadline'),
       supabase
         .from('tasks')
-        .select('title, status, priority, modules!tasks_module_id_fkey(title, projects!modules_project_id_fkey(name))')
-        .lt('deadline', now)
+        .select('title, status, priority, due_date, modules!tasks_module_id_fkey(title, projects!modules_project_id_fkey(name))')
+        .lt('due_date', now)
         .not('status', 'in', '("done")')
-        .order('deadline')
+        .order('due_date')
         .limit(15),
     ])
 
@@ -174,7 +174,7 @@ export const createTask = tool({
     projectName: z.string().describe('Name of the project'),
     moduleTitle: z.string().describe('Title or number of the module'),
     taskTitle: z.string().describe('Title of the new task'),
-    priority: z.enum(['low', 'medium', 'high', 'critical']).optional().describe('Task priority, defaults to medium'),
+    priority: z.enum(['low', 'medium', 'high', 'urgent']).optional().describe('Task priority, defaults to medium'),
     assigneeName: z.string().optional().describe('Name of the person to assign the task to'),
     dueDate: z.string().optional().describe('Optional ISO date string for the deadline (e.g., "2026-04-10T15:00:00Z")'),
     isConfirmed: z.boolean().optional().describe('Set to false first to propose the change to the user. MUST be true to actually write to the database.'),
@@ -290,6 +290,19 @@ export const addMemberToProject = tool({
 
     if (!people?.length) return { error: `Team member "${memberName}" not found` }
     const member = people[0]
+
+    if (!isConfirmed) {
+      return {
+        dryRun: true,
+        actionType: 'addMemberToProject',
+        proposedData: {
+          member: member.full_name,
+          project: project.name,
+          role: projectRole,
+        },
+        message: 'Action proposed. Awaiting user confirmation.'
+      }
+    }
 
     const { error } = await supabase.from('project_members').upsert({
       project_id: project.id,

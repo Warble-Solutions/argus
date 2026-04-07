@@ -16,6 +16,8 @@ export const TASK_STATUS_CONFIG: Record<TaskStatus, { label: string; dotClass: s
   in_progress: { label: 'In Progress', dotClass: 'in-progress' },
   done: { label: 'Done', dotClass: 'done' },
   blocked: { label: 'Blocked', dotClass: 'blocked' },
+  pending_review: { label: 'Pending Review', dotClass: 'in-progress' },
+  revision: { label: 'Revision', dotClass: 'blocked' },
 }
 
 export const TASK_PRIORITY_CONFIG: Record<TaskPriority, { label: string; cssClass: string }> = {

@@ -18,7 +18,7 @@ export type ModuleStatus =
 
 export type TaskType = 'storyboard' | 'video' | 'articulate' | 'review' | 'revision' | 'general'
 
-export type TaskStatus = 'todo' | 'in_progress' | 'done' | 'blocked'
+export type TaskStatus = 'todo' | 'in_progress' | 'done' | 'blocked' | 'pending_review' | 'revision'
 
 export type TaskPriority = 'low' | 'medium' | 'high' | 'urgent'
 

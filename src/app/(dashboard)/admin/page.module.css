@@ -1,9 +1,171 @@
+/* ═══ Analytics Layout ═══ */
+.analyticsGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-6);
+}
+
+@media (max-width: 900px) {
+  .analyticsGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ═══ Performance Card ═══ */
+.performanceCard {
+  min-height: 300px;
+}
+
+.performanceList {
+  display: flex;
+  flex-direction: column;
+}
+
+.performanceRow {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--color-border-subtle);
+  text-decoration: none;
+  color: inherit;
+  transition: background-color 0.15s;
+}
+
+.performanceRow:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.performanceRow:last-child {
+  border-bottom: none;
+}
+
+.perfLeft {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.perfInfo {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.perfName {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--color-text-primary);
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.starIcon {
+  color: var(--color-accent-amber);
+  flex-shrink: 0;
+}
+
+.topPerformerAvatar {
+  outline: 2px solid var(--color-accent-amber);
+  outline-offset: 2px;
+}
+
+.perfStats {
+  display: flex;
+  gap: var(--space-4);
+}
+
+.perfStat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 36px;
+}
+
+.perfValue {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  font-family: var(--font-mono);
+  color: var(--color-text-primary);
+}
+
+.rateGood { color: var(--color-accent-emerald); }
+.rateOk { color: var(--color-accent-amber); }
+.rateLow { color: var(--color-accent-red); }
+
+.perfBar {
+  width: 60px;
+}
+
+.perfBarTrack {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--color-border-subtle);
+  overflow: hidden;
+}
+
+.perfBarFill {
+  height: 100%;
+  border-radius: 2px;
+  background: var(--color-accent-blue);
+  transition: width 0.6s ease;
+}
+
+/* ═══ Module Pipeline ═══ */
+.pipelineCard {
+  min-height: 300px;
+}
+
+.pipelineList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-4) var(--space-4);
+}
+
+.pipelineRow {
+  display: grid;
+  grid-template-columns: 140px 1fr 36px;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.pipelineLabel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.pipelineBar {
+  height: 8px;
+  border-radius: 4px;
+  background: var(--color-border-subtle);
+  overflow: hidden;
+}
+
+.pipelineBarFill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.6s ease;
+}
+
+/* Project health inherits from card */
+
+/* ═══ Chart placeholder (removed) ═══ */
 .chartPlaceholder {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 240px;
-  border: 2px dashed var(--color-border);
+  min-height: 200px;
   border-radius: var(--radius-lg);
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px dashed var(--color-border-subtle);
 }

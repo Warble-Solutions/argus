@@ -1,14 +1,14 @@
 import Link from 'next/link'
-import { Users, UserPlus, Shield, Award } from 'lucide-react'
+import { Users, Shield, Award, Mail } from 'lucide-react'
 import { getTeamMembers } from '@/lib/actions/data'
 import { getInitials } from '@/lib/utils'
 import styles from './page.module.css'
 
-const roleConfig: Record<string, { label: string; color: string }> = {
-  admin: { label: 'Admin', color: 'var(--color-accent-red)' },
-  manager: { label: 'Manager', color: 'var(--color-accent-purple)' },
-  employee: { label: 'Employee', color: 'var(--color-accent-blue)' },
-  intern: { label: 'Intern', color: 'var(--color-accent-amber)' },
+const roleConfig: Record<string, { label: string; color: string; badgeClass: string }> = {
+  admin: { label: 'Admin', color: 'var(--color-accent-red)', badgeClass: 'badge-red' },
+  manager: { label: 'Manager', color: 'var(--color-accent-purple)', badgeClass: 'badge-purple' },
+  employee: { label: 'Employee', color: 'var(--color-accent-blue)', badgeClass: 'badge-blue' },
+  intern: { label: 'Intern', color: 'var(--color-accent-amber)', badgeClass: 'badge-amber' },
 }
 
 export default async function TeamPage() {
@@ -20,14 +20,11 @@ export default async function TeamPage() {
           <h1 className="page-title">Team Management</h1>
           <p className="page-subtitle">{teamMembers.length} team member{teamMembers.length !== 1 ? 's' : ''}</p>
         </div>
-        <button className="btn btn-primary" id="invite-member-btn">
-          <UserPlus size={16} /> Invite Member
-        </button>
       </div>
 
       {/* Team stats */}
       <div className="grid-stats" style={{ marginBottom: 'var(--space-6)' }}>
-        {(['manager', 'employee', 'intern'] as const).map(role => {
+        {(['admin', 'manager', 'employee', 'intern'] as const).map(role => {
           const count = teamMembers.filter((u: any) => u.role === role).length
           const config = roleConfig[role]
           return (
@@ -53,13 +50,12 @@ export default async function TeamPage() {
                 <th>Member</th>
                 <th>Email</th>
                 <th>Role</th>
-                <th>Status</th>
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody>
               {teamMembers.map((user: any) => {
-                const config = roleConfig[user.role]
+                const config = roleConfig[user.role] || roleConfig.employee
                 return (
                   <tr key={user.id}>
                     <td>
@@ -72,18 +68,7 @@ export default async function TeamPage() {
                       <span className="text-small text-muted">{user.email}</span>
                     </td>
                     <td>
-                      <select
-                        className={styles.roleSelect}
-                        defaultValue={user.role}
-                        aria-label={`Role for ${user.full_name}`}
-                      >
-                        <option value="manager">Manager</option>
-                        <option value="employee">Employee</option>
-                        <option value="intern">Intern</option>
-                      </select>
-                    </td>
-                    <td>
-                      <span className="badge badge-emerald">Active</span>
+                      <span className={`badge ${config.badgeClass}`}>{config.label}</span>
                     </td>
                     <td>
                       <div className="flex-row gap-2">

@@ -330,7 +330,7 @@ export async function getMemberProfile(memberId: string) {
       .single(),
     supabase
       .from('project_members')
-      .select('role, project_id, projects!project_members_project_id_fkey(id, name, client_name, status, deadline)')
+      .select('project_role, project_id, projects!project_members_project_id_fkey(id, name, client_name, status, deadline)')
       .eq('user_id', memberId),
     supabase
       .from('tasks')

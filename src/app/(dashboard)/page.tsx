@@ -40,6 +40,7 @@ export default async function DashboardPage() {
   const { data: myTasks } = await supabase
     .from('tasks')
     .select('id, title, priority, status, task_type, module_id')
+    .eq('assigned_to', user?.id || '')
     .neq('status', 'done')
     .order('created_at', { ascending: false })
     .limit(5)
@@ -153,7 +154,7 @@ export default async function DashboardPage() {
           </div>
           <div className={styles.quickActions}>
             <Link href="/chat" className={`btn btn-ghost ${styles.quickBtn}`}>
-              <MessageSquare size={18} /> Chat with Argus
+              <MessageSquare size={18} /> Ask Oracle
             </Link>
             <Link href="/projects" className={`btn btn-ghost ${styles.quickBtn}`}>
               <FolderKanban size={18} /> Browse Projects
