@@ -50,6 +50,75 @@ export async function createProject(formData: FormData) {
   return project
 }
 
+export async function updateProject(projectId: string, formData: FormData) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
+
+  const updates: Record<string, any> = {}
+
+  const name = formData.get('name') as string | null
+  if (name) updates.name = name
+
+  const client_name = formData.get('client_name') as string | null
+  if (client_name) updates.client_name = client_name
+
+  const client_email = formData.get('client_email') as string | null
+  if (client_email !== null) updates.client_email = client_email || null
+
+  const description = formData.get('description') as string | null
+  if (description !== null) updates.description = description || null
+
+  const deadline = formData.get('deadline') as string | null
+  if (deadline) updates.deadline = deadline
+
+  const status = formData.get('status') as string | null
+  if (status) updates.status = status
+
+  if (Object.keys(updates).length === 0) {
+    throw new Error('No fields to update')
+  }
+
+  const { error } = await supabase
+    .from('projects')
+    .update(updates)
+    .eq('id', projectId)
+
+  if (error) throw new Error(error.message)
+
+  revalidatePath(`/projects/${projectId}`)
+  revalidatePath('/projects')
+  revalidatePath('/')
+}
+
+export async function deleteProject(projectId: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
+
+  // Verify the user is admin/manager
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single()
+
+  if (!profile || (profile.role !== 'admin' && profile.role !== 'manager')) {
+    throw new Error('Only admins and managers can delete projects')
+  }
+
+  // Delete project (cascades handle modules, tasks, members)
+  const { error } = await supabase
+    .from('projects')
+    .delete()
+    .eq('id', projectId)
+
+  if (error) throw new Error(error.message)
+
+  revalidatePath('/projects')
+  revalidatePath('/')
+}
+
 export async function getProjects() {
   const supabase = await createClient()
   const { data, error } = await supabase

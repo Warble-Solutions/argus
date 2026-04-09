@@ -4,6 +4,7 @@ import { getProjectById, getModulesByProject, getTeamMembers, getProjectMembers 
 import { formatDate, getDeadlineStatus } from '@/lib/utils'
 import ModulesTable from '@/components/projects/ModulesTable'
 import ProjectTeam from '@/components/projects/ProjectTeam'
+import ProjectActions from '@/components/projects/ProjectActions'
 import styles from './page.module.css'
 
 export default async function ProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -40,13 +41,28 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
           <h1 className="page-title">{project.name}</h1>
           <p className="page-subtitle">{project.client_name}{project.description ? ` · ${project.description}` : ''}</p>
         </div>
+        <ProjectActions project={{
+          id: project.id,
+          name: project.name,
+          client_name: project.client_name,
+          client_email: project.client_email,
+          description: project.description,
+          deadline: project.deadline,
+          status: project.status,
+        }} />
       </div>
 
       <div className={styles.statsBar}>
         <div className={styles.statItem}>
           <span className="text-tiny text-dim">Status</span>
-          <span className={`badge ${project.status === 'active' ? 'badge-emerald' : 'badge-amber'}`}>
-            {project.status === 'active' ? 'Active' : 'On Hold'}
+          <span className={`badge ${
+            project.status === 'active' ? 'badge-emerald' :
+            project.status === 'completed' ? 'badge-blue' :
+            project.status === 'archived' ? 'badge-neutral' : 'badge-amber'
+          }`}>
+            {project.status === 'active' ? 'Active' :
+             project.status === 'completed' ? 'Completed' :
+             project.status === 'archived' ? 'Archived' : 'On Hold'}
           </span>
         </div>
         <div className={styles.statItem}>

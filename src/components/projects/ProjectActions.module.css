@@ -1,0 +1,65 @@
+.actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.deleteBtn {
+  color: var(--color-text-muted);
+  transition: color var(--transition-fast);
+}
+
+.deleteBtn:hover {
+  color: var(--color-accent-red) !important;
+  background: rgba(239, 68, 68, 0.1) !important;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.errorBar {
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  color: #f87171;
+  font-size: var(--text-sm);
+}
+
+.deleteContent {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.deleteWarning {
+  display: flex;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  color: var(--color-text-primary);
+}
+
+.deleteWarning svg {
+  color: var(--color-accent-red);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.deleteWarning strong {
+  color: var(--color-accent-red);
+  display: block;
+  margin-bottom: var(--space-1);
+}
+
+.deleteWarning p {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  line-height: 1.5;
+  margin: 0;
+}
