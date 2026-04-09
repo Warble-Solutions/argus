@@ -20,6 +20,7 @@ import {
 } from 'lucide-react'
 import { getInitials } from '@/lib/utils'
 import { signOut } from '@/lib/actions/auth'
+import ProfileEditor from '@/components/layout/ProfileEditor'
 import type { UserRole } from '@/types'
 import styles from './Sidebar.module.css'
 
@@ -111,7 +112,10 @@ export default function Sidebar({ user }: SidebarProps) {
         </div>
         {!collapsed && (
           <div className={styles.userInfo}>
-            <span className={styles.userName}>{userName}</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <span className={styles.userName}>{userName}</span>
+              <ProfileEditor currentName={userName} />
+            </div>
             <span className={styles.userRole}>{userRole}</span>
           </div>
         )}

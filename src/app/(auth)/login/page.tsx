@@ -93,6 +93,12 @@ export default function LoginPage() {
           </div>
         </div>
 
+        <div style={{ textAlign: 'right', marginTop: 'calc(-1 * var(--space-3))' }}>
+          <Link href="/forgot-password" className={styles.footerLink} style={{ fontSize: 'var(--text-xs)' }}>
+            Forgot password?
+          </Link>
+        </div>
+
         <button
           type="submit"
           className={`btn btn-primary btn-lg ${styles.submitBtn}`}

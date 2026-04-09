@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Eye, EyeOff, UserPlus } from 'lucide-react'
+import { Eye, EyeOff, UserPlus, ShieldCheck } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import styles from '../login/page.module.css'
 
@@ -12,6 +12,7 @@ export default function SignupPage() {
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [inviteCode, setInviteCode] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -20,6 +21,14 @@ export default function SignupPage() {
     e.preventDefault()
     setError('')
     setLoading(true)
+
+    // Validate invite code
+    const validCodes = (process.env.NEXT_PUBLIC_INVITE_CODES || 'ARGUS2026').split(',').map(c => c.trim().toUpperCase())
+    if (!validCodes.includes(inviteCode.trim().toUpperCase())) {
+      setError('Invalid invite code. Contact your admin to get one.')
+      setLoading(false)
+      return
+    }
 
     const supabase = createClient()
     const { error: authError } = await supabase.auth.signUp({
@@ -64,6 +73,25 @@ export default function SignupPage() {
         )}
 
         <div className="input-group">
+          <label htmlFor="signup-invite" className="input-label">
+            <ShieldCheck size={14} style={{ display: 'inline', verticalAlign: '-2px', marginRight: 4 }} />
+            Invite Code *
+          </label>
+          <input
+            id="signup-invite"
+            type="text"
+            className="input-field"
+            placeholder="Enter your invite code"
+            value={inviteCode}
+            onChange={e => setInviteCode(e.target.value)}
+            required
+            autoFocus
+            style={{ fontFamily: 'var(--font-mono)', letterSpacing: '0.05em', textTransform: 'uppercase' }}
+          />
+          <span className="text-tiny text-dim" style={{ marginTop: 2 }}>Get this from your team admin</span>
+        </div>
+
+        <div className="input-group">
           <label htmlFor="signup-name" className="input-label">Full Name</label>
           <input
             id="signup-name"
@@ -73,7 +101,6 @@ export default function SignupPage() {
             value={fullName}
             onChange={e => setFullName(e.target.value)}
             required
-            autoFocus
           />
         </div>
 

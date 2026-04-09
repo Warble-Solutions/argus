@@ -1,7 +1,9 @@
 import Link from 'next/link'
 import { ArrowLeft, Mail, Shield, FolderKanban, CheckSquare, Calendar, Clock } from 'lucide-react'
 import { getMemberProfile } from '@/lib/actions/data'
+import { getCurrentUser } from '@/lib/actions/auth'
 import { getInitials, formatDate } from '@/lib/utils'
+import RoleChanger from '@/components/admin/RoleChanger'
 import styles from './page.module.css'
 
 const roleConfig: Record<string, { label: string; color: string; badge: string }> = {
@@ -36,7 +38,10 @@ export default async function MemberProfilePage({
 }) {
   const { id } = await params
   const { profile, projects, recentTasks } = await getMemberProfile(id)
+  const currentUser = await getCurrentUser()
   const config = roleConfig[profile.role] || roleConfig.employee
+  const isAdmin = currentUser?.role === 'admin'
+  const isSelf = currentUser?.id === id
 
   const tasksTotal = recentTasks.length
   const tasksDone = recentTasks.filter((t: any) => t.status === 'done').length
@@ -65,6 +70,9 @@ export default async function MemberProfilePage({
           <p className={styles.joinDate}>
             <Calendar size={12} /> Joined {formatDate(profile.created_at)}
           </p>
+          {isAdmin && !isSelf && (
+            <RoleChanger memberId={id} currentRole={profile.role} isAdmin={isAdmin} />
+          )}
         </div>
       </div>
 
