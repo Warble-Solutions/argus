@@ -188,6 +188,82 @@ export async function createModule(formData: FormData) {
   revalidatePath(`/projects/${projectId}`)
 }
 
+export async function updateModule(moduleId: string, formData: FormData) {
+  const supabase = await createClient()
+
+  const updates: Record<string, any> = {}
+
+  const title = formData.get('title') as string | null
+  if (title) updates.title = title
+
+  const description = formData.get('description') as string | null
+  if (description !== null) updates.description = description || null
+
+  const assigned_to = formData.get('assigned_to') as string | null
+  if (assigned_to !== null) updates.assigned_to = assigned_to || null
+
+  const deadline = formData.get('deadline') as string | null
+  if (deadline) updates.deadline = deadline
+
+  const status = formData.get('status') as string | null
+  if (status) updates.status = status
+
+  if (Object.keys(updates).length === 0) {
+    throw new Error('No fields to update')
+  }
+
+  // Get the module for revalidation path
+  const { data: mod } = await supabase
+    .from('modules')
+    .select('project_id')
+    .eq('id', moduleId)
+    .single()
+
+  const { error } = await supabase
+    .from('modules')
+    .update(updates)
+    .eq('id', moduleId)
+
+  if (error) throw new Error(error.message)
+
+  if (mod) {
+    revalidatePath(`/projects/${mod.project_id}/modules/${moduleId}`)
+    revalidatePath(`/projects/${mod.project_id}`)
+  }
+}
+
+export async function deleteModule(moduleId: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
+
+  // Get the module to know project_id
+  const { data: mod } = await supabase
+    .from('modules')
+    .select('project_id')
+    .eq('id', moduleId)
+    .single()
+
+  if (!mod) throw new Error('Module not found')
+
+  const { error } = await supabase
+    .from('modules')
+    .delete()
+    .eq('id', moduleId)
+
+  if (error) throw new Error(error.message)
+
+  // Decrement modules count on project
+  try {
+    await supabase.rpc('decrement_modules_count', { project_uuid: mod.project_id })
+  } catch {
+    // If RPC doesn't exist, ignore — the count will be stale but non-blocking
+  }
+
+  revalidatePath(`/projects/${mod.project_id}`)
+  revalidatePath('/projects')
+}
+
 export async function getModulesByProject(projectId: string) {
   const supabase = await createClient()
   const { data, error } = await supabase
@@ -241,6 +317,82 @@ export async function createTask(formData: FormData) {
 
   if (mod) {
     revalidatePath(`/projects/${mod.project_id}/modules/${moduleId}`)
+  }
+}
+
+export async function updateTask(taskId: string, formData: FormData) {
+  const supabase = await createClient()
+
+  const updates: Record<string, any> = {}
+
+  const title = formData.get('title') as string | null
+  if (title) updates.title = title
+
+  const description = formData.get('description') as string | null
+  if (description !== null) updates.description = description || null
+
+  const task_type = formData.get('task_type') as string | null
+  if (task_type) updates.task_type = task_type
+
+  const priority = formData.get('priority') as string | null
+  if (priority) updates.priority = priority
+
+  const assigned_to = formData.get('assigned_to') as string | null
+  if (assigned_to !== null) updates.assigned_to = assigned_to || null
+
+  const due_date = formData.get('due_date') as string | null
+  if (due_date !== null) updates.due_date = due_date || null
+
+  if (Object.keys(updates).length === 0) {
+    throw new Error('No fields to update')
+  }
+
+  // Get the task's module for revalidation
+  const { data: task } = await supabase
+    .from('tasks')
+    .select('module_id, modules!tasks_module_id_fkey(project_id)')
+    .eq('id', taskId)
+    .single()
+
+  const { error } = await supabase
+    .from('tasks')
+    .update(updates)
+    .eq('id', taskId)
+
+  if (error) throw new Error(error.message)
+
+  if (task) {
+    const projectId = (task.modules as any)?.project_id
+    if (projectId) {
+      revalidatePath(`/projects/${projectId}/modules/${task.module_id}`)
+    }
+  }
+}
+
+export async function deleteTask(taskId: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
+
+  // Get the task's module for revalidation
+  const { data: task } = await supabase
+    .from('tasks')
+    .select('module_id, modules!tasks_module_id_fkey(project_id)')
+    .eq('id', taskId)
+    .single()
+
+  if (!task) throw new Error('Task not found')
+
+  const { error } = await supabase
+    .from('tasks')
+    .delete()
+    .eq('id', taskId)
+
+  if (error) throw new Error(error.message)
+
+  const projectId = (task.modules as any)?.project_id
+  if (projectId) {
+    revalidatePath(`/projects/${projectId}/modules/${task.module_id}`)
   }
 }
 

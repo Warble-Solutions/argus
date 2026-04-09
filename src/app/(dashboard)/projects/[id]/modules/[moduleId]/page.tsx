@@ -5,6 +5,7 @@ import { getCurrentUser } from '@/lib/actions/auth'
 import { MODULE_STATUS_CONFIG, formatDate, getDaysUntil, getDeadlineStatus, getInitials } from '@/lib/utils'
 import TaskSection from '@/components/tasks/TaskSection'
 import TimeTracker from '@/components/time/TimeTracker'
+import ModuleActions from '@/components/projects/ModuleActions'
 import styles from './page.module.css'
 
 export default async function ModuleDetailPage({ params }: { params: Promise<{ id: string; moduleId: string }> }) {
@@ -59,6 +60,15 @@ export default async function ModuleDetailPage({ params }: { params: Promise<{ i
               <Lock size={12} /> Gate Pending
             </span>
           )}
+          <ModuleActions module={{
+            id: mod.id,
+            project_id: project.id,
+            title: mod.title,
+            description: mod.description,
+            assigned_to: mod.assigned_to,
+            deadline: mod.deadline,
+            status: mod.status,
+          }} teamMembers={teamMembers} />
         </div>
       </div>
 

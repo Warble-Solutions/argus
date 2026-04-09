@@ -1,10 +1,10 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { Plus, Clock, CheckCircle, Circle, AlertCircle, Send } from 'lucide-react'
+import { Plus, Clock, CheckCircle, Circle, AlertCircle, Send, Pencil, Trash2, MoreHorizontal } from 'lucide-react'
 import Modal from '@/components/ui/Modal'
 import DateTimePicker from '@/components/ui/DateTimePicker'
-import { createTask, submitInternTask, updateTaskStatus } from '@/lib/actions/data'
+import { createTask, submitInternTask, updateTaskStatus, updateTask, deleteTask } from '@/lib/actions/data'
 import { TASK_PRIORITY_CONFIG, getInitials, formatMinutes } from '@/lib/utils'
 import type { UserRole } from '@/types'
 import styles from './TaskSection.module.css'
@@ -18,6 +18,9 @@ interface TaskSectionProps {
 
 export default function TaskSection({ tasks, moduleId, userRole = 'manager', teamMembers = [] }: TaskSectionProps) {
   const [showCreateModal, setShowCreateModal] = useState(false)
+  const [editingTask, setEditingTask] = useState<any>(null)
+  const [deletingTask, setDeletingTask] = useState<any>(null)
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null)
   const [submitted, setSubmitted] = useState(false)
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState('')
@@ -62,6 +65,34 @@ export default function TaskSection({ tasks, moduleId, userRole = 'manager', tea
     })
   }
 
+  const handleEditSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    setError('')
+    const formData = new FormData(e.currentTarget)
+
+    startTransition(async () => {
+      try {
+        await updateTask(editingTask.id, formData)
+        setEditingTask(null)
+      } catch (err: any) {
+        setError(err.message || 'Failed to update task')
+      }
+    })
+  }
+
+  const handleDelete = () => {
+    if (!deletingTask) return
+    setError('')
+    startTransition(async () => {
+      try {
+        await deleteTask(deletingTask.id)
+        setDeletingTask(null)
+      } catch (err: any) {
+        setError(err.message || 'Failed to delete task')
+      }
+    })
+  }
+
   return (
     <>
       <div className="card-header">
@@ -94,6 +125,7 @@ export default function TaskSection({ tasks, moduleId, userRole = 'manager', tea
           tasks.map((task: any) => {
             const taskPriority = TASK_PRIORITY_CONFIG[task.priority as keyof typeof TASK_PRIORITY_CONFIG] || { label: task.priority, cssClass: 'badge-neutral' }
             const assigneeName = task.profiles?.full_name
+            const isMenuOpen = openMenuId === task.id
 
             return (
               <div key={task.id} className={styles.taskItem}>
@@ -146,6 +178,35 @@ export default function TaskSection({ tasks, moduleId, userRole = 'manager', tea
                       {getInitials(assigneeName)}
                     </div>
                   )}
+
+                  {/* Actions Menu */}
+                  {!isIntern && (
+                    <div className={styles.taskMenu}>
+                      <button
+                        className={styles.menuBtn}
+                        onClick={() => setOpenMenuId(isMenuOpen ? null : task.id)}
+                        aria-label="Task actions"
+                      >
+                        <MoreHorizontal size={16} />
+                      </button>
+                      {isMenuOpen && (
+                        <div className={styles.menuDropdown}>
+                          <button
+                            className={styles.menuItem}
+                            onClick={() => { setEditingTask(task); setOpenMenuId(null) }}
+                          >
+                            <Pencil size={13} /> Edit
+                          </button>
+                          <button
+                            className={`${styles.menuItem} ${styles.menuItemDanger}`}
+                            onClick={() => { setDeletingTask(task); setOpenMenuId(null) }}
+                          >
+                            <Trash2 size={13} /> Delete
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             )
@@ -153,7 +214,7 @@ export default function TaskSection({ tasks, moduleId, userRole = 'manager', tea
         )}
       </div>
 
-      {/* Create Task Modal */}
+      {/* ═══ Create Task Modal ═══ */}
       <Modal
         isOpen={showCreateModal}
         onClose={() => { setShowCreateModal(false); setSubmitted(false) }}
@@ -177,7 +238,7 @@ export default function TaskSection({ tasks, moduleId, userRole = 'manager', tea
           </div>
         ) : (
         <form id="create-task-form" onSubmit={handleCreate} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
-          {error && <div style={{ padding: 'var(--space-3)', borderRadius: 'var(--radius-md)', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.25)', color: '#f87171', fontSize: 'var(--text-sm)' }}>{error}</div>}
+          {error && <div className={styles.errorBar}>{error}</div>}
           {isIntern && (
             <div style={{ padding: 'var(--space-3)', borderRadius: 'var(--radius-md)', background: 'rgba(59, 130, 246, 0.08)', border: '1px solid rgba(59, 130, 246, 0.2)', fontSize: 'var(--text-sm)', color: 'var(--color-accent-blue)' }}>
               💡 As an intern, your task suggestion will be reviewed before being created.
@@ -231,6 +292,97 @@ export default function TaskSection({ tasks, moduleId, userRole = 'manager', tea
             </div>
           )}
         </form>
+        )}
+      </Modal>
+
+      {/* ═══ Edit Task Modal ═══ */}
+      <Modal
+        isOpen={!!editingTask}
+        onClose={() => { setEditingTask(null); setError('') }}
+        title="Edit Task"
+        footer={
+          <>
+            <button className="btn btn-ghost" onClick={() => { setEditingTask(null); setError('') }}>Cancel</button>
+            <button className="btn btn-primary" form="edit-task-form" type="submit" disabled={isPending}>
+              {isPending ? 'Saving...' : 'Save Changes'}
+            </button>
+          </>
+        }
+      >
+        {editingTask && (
+          <form id="edit-task-form" onSubmit={handleEditSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+            {error && <div className={styles.errorBar}>{error}</div>}
+            <div className="input-group">
+              <label htmlFor="edit-task-title" className="input-label">Task Title *</label>
+              <input id="edit-task-title" name="title" type="text" className="input-field" defaultValue={editingTask.title} required autoFocus />
+            </div>
+            <div className="input-group">
+              <label htmlFor="edit-task-desc" className="input-label">Description</label>
+              <textarea id="edit-task-desc" name="description" className="input-field" defaultValue={editingTask.description || ''} rows={3} />
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-4)' }}>
+              <div className="input-group">
+                <label htmlFor="edit-task-type" className="input-label">Task Type</label>
+                <select id="edit-task-type" name="task_type" className="input-field" defaultValue={editingTask.task_type}>
+                  <option value="general">General</option>
+                  <option value="storyboard">Storyboard</option>
+                  <option value="video">Video</option>
+                  <option value="articulate">Articulate</option>
+                  <option value="review">Review</option>
+                  <option value="revision">Revision</option>
+                </select>
+              </div>
+              <div className="input-group">
+                <label htmlFor="edit-task-priority" className="input-label">Priority</label>
+                <select id="edit-task-priority" name="priority" className="input-field" defaultValue={editingTask.priority}>
+                  <option value="low">Low</option>
+                  <option value="medium">Medium</option>
+                  <option value="high">High</option>
+                  <option value="urgent">Urgent</option>
+                </select>
+              </div>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-4)' }}>
+              <div className="input-group">
+                <label htmlFor="edit-task-assignee" className="input-label">Assign To</label>
+                <select id="edit-task-assignee" name="assigned_to" className="input-field" defaultValue={editingTask.assigned_to || ''}>
+                  <option value="">Unassigned</option>
+                  {employees.map((u: any) => (
+                    <option key={u.id} value={u.id}>{u.full_name}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="input-group">
+                <label htmlFor="edit-task-due" className="input-label">Due Date</label>
+                <DateTimePicker id="edit-task-due" name="due_date" className="input-field" defaultValue={editingTask.due_date || undefined} />
+              </div>
+            </div>
+          </form>
+        )}
+      </Modal>
+
+      {/* ═══ Delete Task Modal ═══ */}
+      <Modal
+        isOpen={!!deletingTask}
+        onClose={() => { setDeletingTask(null); setError('') }}
+        title="Delete Task"
+        footer={
+          <>
+            <button className="btn btn-ghost" onClick={() => { setDeletingTask(null); setError('') }}>Cancel</button>
+            <button className="btn btn-danger" onClick={handleDelete} disabled={isPending}>
+              {isPending ? 'Deleting...' : 'Delete Task'}
+            </button>
+          </>
+        }
+      >
+        {deletingTask && (
+          <div>
+            {error && <div className={styles.errorBar} style={{ marginBottom: 'var(--space-3)' }}>{error}</div>}
+            <p className="text-small" style={{ color: 'var(--color-text-muted)', lineHeight: 1.6 }}>
+              Are you sure you want to delete <strong style={{ color: 'var(--color-text-primary)' }}>&quot;{deletingTask.title}&quot;</strong>?
+              This action cannot be undone. All time entries linked to this task will also be removed.
+            </p>
+          </div>
         )}
       </Modal>
     </>
