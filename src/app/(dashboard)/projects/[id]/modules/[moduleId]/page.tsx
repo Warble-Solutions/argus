@@ -1,10 +1,11 @@
 import Link from 'next/link'
-import { Upload, Lock, ChevronRight } from 'lucide-react'
+import { Lock, ChevronRight } from 'lucide-react'
 import { getModuleById, getTasksByModule, getProjectById, getTeamMembers } from '@/lib/actions/data'
 import { getCurrentUser } from '@/lib/actions/auth'
 import { MODULE_STATUS_CONFIG, formatDate, getDaysUntil, getDeadlineStatus, getInitials, formatMinutes } from '@/lib/utils'
 import TaskSection from '@/components/tasks/TaskSection'
 import ModuleActions from '@/components/projects/ModuleActions'
+import ModuleFiles from '@/components/projects/ModuleFiles'
 import styles from './page.module.css'
 
 export default async function ModuleDetailPage({ params }: { params: Promise<{ id: string; moduleId: string }> }) {
@@ -119,19 +120,7 @@ export default async function ModuleDetailPage({ params }: { params: Promise<{ i
         {/* Right Column */}
         <div className={styles.rightColumn}>
           {/* Files */}
-          <div className={`card ${styles.filesSection}`}>
-            <div className="card-header">
-              <h2 className="card-title">📁 Files</h2>
-              <button className="btn btn-ghost btn-sm" id="upload-file-btn">
-                <Upload size={14} /> Upload
-              </button>
-            </div>
-            <div className={styles.uploadZone}>
-              <Upload size={28} style={{ color: 'var(--color-text-muted)', opacity: 0.5 }} />
-              <p className="text-small text-muted">Drag files here or click Upload</p>
-              <p className="text-tiny text-dim">Files will be uploaded to Google Drive</p>
-            </div>
-          </div>
+          <ModuleFiles projectId={id} moduleId={moduleId} />
 
           {/* Time Summary */}
           <div className={`card ${styles.filesSection}`}>

@@ -1,0 +1,209 @@
+.filesCard {
+  overflow: visible;
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+/* ═══ Drop Zone ═══ */
+.dropZone {
+  position: relative;
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
+}
+
+.dropZoneActive {
+  background: rgba(59, 130, 246, 0.06);
+  outline: 2px dashed var(--color-accent-blue);
+  outline-offset: -2px;
+}
+
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-8) var(--space-4);
+  cursor: pointer;
+  border-radius: var(--radius-md);
+  border: 2px dashed var(--color-border);
+  transition: all var(--transition-fast);
+}
+
+.emptyState:hover {
+  border-color: var(--color-accent-blue);
+  background: rgba(59, 130, 246, 0.04);
+}
+
+.loadingState {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-6) 0;
+}
+
+/* ═══ File List ═══ */
+.fileList {
+  display: flex;
+  flex-direction: column;
+}
+
+.fileRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.fileRow:last-of-type {
+  border-bottom: none;
+}
+
+.fileIcon {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  background: var(--color-bg-tertiary);
+  color: var(--color-text-muted);
+  flex-shrink: 0;
+}
+
+.extBadge {
+  position: absolute;
+  bottom: -2px;
+  right: -4px;
+  font-size: 8px;
+  font-weight: var(--weight-bold);
+  font-family: var(--font-mono);
+  padding: 0 3px;
+  border-radius: 3px;
+  background: var(--color-accent-blue);
+  color: #fff;
+  letter-spacing: 0.03em;
+  line-height: 14px;
+}
+
+.fileInfo {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.fileName {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fileActions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  flex-shrink: 0;
+}
+
+.fileActionBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-md);
+  border: none;
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  text-decoration: none;
+  transition: all var(--transition-fast);
+}
+
+.fileActionBtn:hover {
+  background: var(--color-bg-tertiary);
+  color: var(--color-text-primary);
+}
+
+.deleteFileBtn:hover {
+  color: var(--color-accent-red);
+  background: rgba(239, 68, 68, 0.1);
+}
+
+/* ═══ Add More Zone ═══ */
+.addMoreZone {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  margin-top: var(--space-2);
+  border-radius: var(--radius-md);
+  border: 1px dashed var(--color-border);
+  cursor: pointer;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  transition: all var(--transition-fast);
+}
+
+.addMoreZone:hover {
+  border-color: var(--color-accent-blue);
+  color: var(--color-accent-blue);
+  background: rgba(59, 130, 246, 0.04);
+}
+
+/* ═══ Status Bars ═══ */
+.uploadingBar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  margin-bottom: var(--space-2);
+  border-radius: var(--radius-md);
+  background: rgba(59, 130, 246, 0.06);
+  font-size: var(--text-sm);
+  color: var(--color-accent-blue);
+}
+
+.errorBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-2) var(--space-3);
+  margin-bottom: var(--space-2);
+  border-radius: var(--radius-md);
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  color: #f87171;
+  font-size: var(--text-sm);
+}
+
+.dismissBtn {
+  border: none;
+  background: transparent;
+  color: #f87171;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  padding: 0 var(--space-1);
+}
+
+.spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
