@@ -16,10 +16,19 @@
   gap: var(--space-3);
   padding: var(--space-3) 0;
   border-bottom: 1px solid var(--color-border);
+  transition: background-color 0.15s;
 }
 
 .taskItem:last-child {
   border-bottom: none;
+}
+
+.taskItemTiming {
+  background: rgba(59, 130, 246, 0.04);
+  margin: 0 calc(-1 * var(--space-4));
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  border-bottom-color: transparent;
 }
 
 .taskCheckbox {
@@ -58,8 +67,19 @@
   align-items: center;
   gap: 3px;
   font-size: 11px;
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+}
+
+.taskTimerLive {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 11px;
   color: var(--color-accent-blue);
   font-family: var(--font-mono);
+  font-weight: var(--weight-semibold);
+  animation: pulse-glow 2s ease-in-out infinite;
 }
 
 .taskRight {
@@ -69,6 +89,110 @@
   flex-shrink: 0;
 }
 
+/* ═══ Per-Task Timer Button ═══ */
+.timerBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-border);
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.timerBtn:hover {
+  border-color: var(--color-accent-blue);
+  color: var(--color-accent-blue);
+  background: rgba(59, 130, 246, 0.08);
+}
+
+.timerBtnActive {
+  border-color: var(--color-accent-red);
+  color: var(--color-accent-red);
+  background: rgba(239, 68, 68, 0.08);
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.timerBtnActive:hover {
+  border-color: var(--color-accent-red);
+  color: #fff;
+  background: var(--color-accent-red);
+}
+
+/* ═══ Timer Banner ═══ */
+.timerBanner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  margin-bottom: var(--space-3);
+  background: rgba(59, 130, 246, 0.06);
+  border: 1px solid rgba(59, 130, 246, 0.15);
+  border-radius: var(--radius-lg);
+}
+
+.timerPulse {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+  background: var(--color-accent-blue);
+  animation: pulse-glow 2s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+.timerIcon {
+  color: var(--color-accent-blue);
+  flex-shrink: 0;
+}
+
+.timerLabel {
+  flex: 1;
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.timerLabel strong {
+  color: var(--color-text-primary);
+}
+
+.timerClock {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
+  color: var(--color-accent-blue);
+  letter-spacing: 0.05em;
+}
+
+.timerStopBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  background: rgba(239, 68, 68, 0.08);
+  color: var(--color-accent-red);
+  font-size: 12px;
+  font-weight: var(--weight-medium);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.timerStopBtn:hover {
+  background: var(--color-accent-red);
+  color: #fff;
+}
+
+/* ═══ Status Select ═══ */
 .statusSelect {
   padding: 3px 24px 3px 8px;
   font-size: 12px;
@@ -122,7 +246,7 @@
   right: 0;
   top: 100%;
   margin-top: 4px;
-  min-width: 120px;
+  min-width: 130px;
   background: var(--color-bg-card);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);

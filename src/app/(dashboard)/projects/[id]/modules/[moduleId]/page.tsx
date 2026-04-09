@@ -2,9 +2,8 @@ import Link from 'next/link'
 import { Upload, Lock, ChevronRight } from 'lucide-react'
 import { getModuleById, getTasksByModule, getProjectById, getTeamMembers } from '@/lib/actions/data'
 import { getCurrentUser } from '@/lib/actions/auth'
-import { MODULE_STATUS_CONFIG, formatDate, getDaysUntil, getDeadlineStatus, getInitials } from '@/lib/utils'
+import { MODULE_STATUS_CONFIG, formatDate, getDaysUntil, getDeadlineStatus, getInitials, formatMinutes } from '@/lib/utils'
 import TaskSection from '@/components/tasks/TaskSection'
-import TimeTracker from '@/components/time/TimeTracker'
 import ModuleActions from '@/components/projects/ModuleActions'
 import styles from './page.module.css'
 
@@ -134,8 +133,25 @@ export default async function ModuleDetailPage({ params }: { params: Promise<{ i
             </div>
           </div>
 
-          {/* Time Tracking */}
-          <TimeTracker moduleId={moduleId} totalMinutes={totalMinutes} />
+          {/* Time Summary */}
+          <div className={`card ${styles.filesSection}`}>
+            <div className="card-header">
+              <h2 className="card-title">⏱ Time Tracked</h2>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)', padding: 'var(--space-2) 0' }}>
+              <div className="flex-between">
+                <span className="text-small text-muted">Total logged</span>
+                <span className="text-small text-mono" style={{ fontWeight: 'var(--weight-semibold)' }}>{formatMinutes(totalMinutes)}</span>
+              </div>
+              <div className="flex-between">
+                <span className="text-small text-muted">Tasks tracked</span>
+                <span className="text-small text-mono">{tasks.filter((t: any) => (t.time_spent_minutes || 0) > 0).length}/{tasks.length}</span>
+              </div>
+            </div>
+            <p className="text-tiny text-dim" style={{ marginTop: 'var(--space-2)' }}>
+              Use the ▶ button on each task to start tracking time.
+            </p>
+          </div>
 
           {/* Activity Log */}
           <div className={`card ${styles.activitySection}`}>

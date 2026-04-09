@@ -396,6 +396,37 @@ export async function deleteTask(taskId: string) {
   }
 }
 
+export async function logTimeEntry(taskId: string, minutes: number, notes?: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
+
+  if (minutes <= 0) return
+
+  // Get current time and module for revalidation
+  const { data: task } = await supabase
+    .from('tasks')
+    .select('time_spent_minutes, module_id, modules!tasks_module_id_fkey(project_id)')
+    .eq('id', taskId)
+    .single()
+
+  if (!task) throw new Error('Task not found')
+
+  const newTotal = (task.time_spent_minutes || 0) + minutes
+
+  const { error } = await supabase
+    .from('tasks')
+    .update({ time_spent_minutes: newTotal })
+    .eq('id', taskId)
+
+  if (error) throw new Error(error.message)
+
+  const projectId = (task.modules as any)?.project_id
+  if (projectId) {
+    revalidatePath(`/projects/${projectId}/modules/${task.module_id}`)
+  }
+}
+
 export async function getTasksByModule(moduleId: string) {
   const supabase = await createClient()
   const { data, error } = await supabase
