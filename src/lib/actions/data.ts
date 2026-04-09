@@ -229,6 +229,8 @@ export async function updateModule(moduleId: string, formData: FormData) {
   if (mod) {
     revalidatePath(`/projects/${mod.project_id}/modules/${moduleId}`)
     revalidatePath(`/projects/${mod.project_id}`)
+    const title = formData.get('title') as string | null
+    await logActivity('module_updated', `Updated module${title ? ` "${title}"` : ''}`, { projectId: mod.project_id, moduleId })
   }
 }
 
@@ -317,6 +319,8 @@ export async function createTask(formData: FormData) {
 
   if (mod) {
     revalidatePath(`/projects/${mod.project_id}/modules/${moduleId}`)
+    const taskTitle = formData.get('title') as string
+    await logActivity('task_created', `Created task "${taskTitle}"`, { projectId: mod.project_id, moduleId })
   }
 }
 
@@ -365,6 +369,7 @@ export async function updateTask(taskId: string, formData: FormData) {
     const projectId = (task.modules as any)?.project_id
     if (projectId) {
       revalidatePath(`/projects/${projectId}/modules/${task.module_id}`)
+      await logActivity('task_updated', `Updated task fields`, { projectId, moduleId: task.module_id, taskId })
     }
   }
 }
@@ -377,7 +382,7 @@ export async function deleteTask(taskId: string) {
   // Get the task's module for revalidation
   const { data: task } = await supabase
     .from('tasks')
-    .select('module_id, modules!tasks_module_id_fkey(project_id)')
+    .select('title, module_id, modules!tasks_module_id_fkey(project_id)')
     .eq('id', taskId)
     .single()
 
@@ -393,6 +398,7 @@ export async function deleteTask(taskId: string) {
   const projectId = (task.modules as any)?.project_id
   if (projectId) {
     revalidatePath(`/projects/${projectId}/modules/${task.module_id}`)
+    await logActivity('task_deleted', `Deleted task "${task.title || 'Untitled'}"`, { projectId, moduleId: task.module_id })
   }
 }
 
@@ -424,6 +430,7 @@ export async function logTimeEntry(taskId: string, minutes: number, notes?: stri
   const projectId = (task.modules as any)?.project_id
   if (projectId) {
     revalidatePath(`/projects/${projectId}/modules/${task.module_id}`)
+    await logActivity('time_logged', `Logged ${minutes}m on a task`, { projectId, moduleId: task.module_id, taskId })
   }
 }
 
@@ -482,6 +489,7 @@ export async function updateTaskStatus(taskId: string, status: string) {
         .update({ status: 'done' })
         .eq('id', taskId)
       if (error) throw new Error(error.message)
+      await logActivity('task_completed', `Completed task "${task.title}"`, { projectId, moduleId: task.module_id, taskId })
     } else {
       // Must go through review — set to pending_review and create approval
       const { error } = await supabase
@@ -516,6 +524,17 @@ export async function updateTaskStatus(taskId: string, status: string) {
     .eq('id', taskId)
 
   if (error) throw new Error(error.message)
+
+  // Log status change for generic transitions
+  const { data: taskForLog } = await supabase
+    .from('tasks')
+    .select('title, module_id, modules!tasks_module_id_fkey(project_id)')
+    .eq('id', taskId)
+    .single()
+  if (taskForLog) {
+    const pid = (taskForLog.modules as any)?.project_id
+    await logActivity('task_status_changed', `Changed task "${taskForLog.title}" to ${status}`, { projectId: pid, moduleId: taskForLog.module_id, taskId })
+  }
 }
 
 export async function submitInternTask(formData: FormData) {
@@ -859,4 +878,44 @@ export async function createNotification(
     .insert({ user_id: userId, title, message, type, link })
 
   if (error) throw new Error(error.message)
+}
+
+// ═══ Activity Log ═══
+
+export async function logActivity(
+  action: string,
+  description: string,
+  opts: { projectId?: string; moduleId?: string; taskId?: string; metadata?: Record<string, any> } = {}
+) {
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+
+    await supabase.from('activity_log').insert({
+      user_id: user.id,
+      action,
+      description,
+      project_id: opts.projectId || null,
+      module_id: opts.moduleId || null,
+      task_id: opts.taskId || null,
+      metadata: opts.metadata || {},
+    })
+  } catch (err) {
+    // Non-blocking — never throw from activity logging
+    console.error('Activity log failed:', err)
+  }
+}
+
+export async function getModuleActivity(moduleId: string) {
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from('activity_log')
+    .select('*, profiles!activity_log_user_id_fkey(full_name)')
+    .eq('module_id', moduleId)
+    .order('created_at', { ascending: false })
+    .limit(30)
+
+  if (error) return []
+  return data || []
 }

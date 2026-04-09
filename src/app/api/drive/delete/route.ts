@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { deleteFileFromDrive } from '@/lib/google/drive'
+import { logActivity } from '@/lib/actions/data'
 
 export async function DELETE(req: NextRequest) {
   try {
@@ -27,7 +28,7 @@ export async function DELETE(req: NextRequest) {
     // Get the Drive file ID from our DB
     const { data: record } = await supabase
       .from('drive_files')
-      .select('drive_file_id')
+      .select('drive_file_id, name, module_id, project_id')
       .eq('id', fileId)
       .single()
 
@@ -50,6 +51,11 @@ export async function DELETE(req: NextRequest) {
 
     if (error) {
       return Response.json({ error: error.message }, { status: 500 })
+    }
+
+    // Log activity
+    if (record.module_id) {
+      await logActivity('file_deleted', `Deleted "${record.name}"`, { projectId: record.project_id, moduleId: record.module_id })
     }
 
     return Response.json({ success: true })

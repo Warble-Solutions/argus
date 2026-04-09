@@ -6,6 +6,7 @@ import { MODULE_STATUS_CONFIG, formatDate, getDaysUntil, getDeadlineStatus, getI
 import TaskSection from '@/components/tasks/TaskSection'
 import ModuleActions from '@/components/projects/ModuleActions'
 import ModuleFiles from '@/components/projects/ModuleFiles'
+import ActivityFeed from '@/components/projects/ActivityFeed'
 import styles from './page.module.css'
 
 export default async function ModuleDetailPage({ params }: { params: Promise<{ id: string; moduleId: string }> }) {
@@ -143,14 +144,7 @@ export default async function ModuleDetailPage({ params }: { params: Promise<{ i
           </div>
 
           {/* Activity Log */}
-          <div className={`card ${styles.activitySection}`}>
-            <div className="card-header">
-              <h2 className="card-title">📜 Activity</h2>
-            </div>
-            <div className={styles.activityList}>
-              <p className="text-small text-muted" style={{ padding: 'var(--space-4) 0' }}>Activity will appear here as changes are made</p>
-            </div>
-          </div>
+          <ActivityFeed moduleId={moduleId} />
         </div>
       </div>
     </div>

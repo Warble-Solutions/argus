@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { uploadFileToDrive, ensureRootFolder, findOrCreateFolder } from '@/lib/google/drive'
+import { logActivity } from '@/lib/actions/data'
 
 export async function POST(req: NextRequest) {
   try {
@@ -109,6 +110,11 @@ export async function POST(req: NextRequest) {
     if (error) {
       console.error('DB insert error:', error)
       return Response.json({ error: 'File uploaded to Drive but failed to save record' }, { status: 500 })
+    }
+
+    // Log activity
+    if (moduleId) {
+      await logActivity('file_uploaded', `Uploaded "${file.name}"`, { projectId, moduleId })
     }
 
     return Response.json({ success: true, file: record })
