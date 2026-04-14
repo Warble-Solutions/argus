@@ -9,11 +9,9 @@
 
 .tableWrapper {
   overflow-x: auto;
-  overflow-y: visible;
   border-radius: var(--radius-lg);
   border: 1px solid var(--color-border);
   background: var(--color-bg-secondary);
-  position: relative;
 }
 
 .table {
@@ -153,12 +151,7 @@
   letter-spacing: 0.02em;
 }
 
-/* ═══ Action Menu ═══ */
-.actionWrapper {
-  position: relative;
-  display: inline-block;
-}
-
+/* ═══ Action Button & Menu ═══ */
 .actionBtn {
   display: inline-flex;
   align-items: center;
@@ -178,13 +171,10 @@
   color: var(--color-accent-blue);
 }
 
+/* Fixed position, rendered outside table */
 .actionMenu {
-  position: absolute;
-  bottom: 100%;
-  right: 0;
-  z-index: 50;
-  min-width: 200px;
-  margin-bottom: 4px;
+  z-index: 9999;
+  min-width: 210px;
   background: var(--color-bg-elevated);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);

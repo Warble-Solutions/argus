@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useTransition, useRef, useEffect, useCallback } from 'react'
 import { Download, Plus, MessageSquare, Package, CheckCircle, ChevronDown, Eye } from 'lucide-react'
 import { recordVersionDelivered, recordFeedbackReceived, markScormApproved } from '@/lib/actions/data'
 import Modal from '@/components/ui/Modal'
@@ -45,8 +45,37 @@ export default function TimelineTable({ project, modules, userRole }: TimelineTa
   const [isPending, startTransition] = useTransition()
   const [selectedModule, setSelectedModule] = useState<Module | null>(null)
   const [actionMenuId, setActionMenuId] = useState<string | null>(null)
+  const [menuPos, setMenuPos] = useState<{ top: number; left: number }>({ top: 0, left: 0 })
+  const menuRef = useRef<HTMLDivElement>(null)
   const isVernacular = project.is_vernacular
   const canManage = ['admin', 'manager', 'employee'].includes(userRole)
+
+  // Close menu on outside click or scroll
+  useEffect(() => {
+    if (!actionMenuId) return
+    const handleClick = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setActionMenuId(null)
+      }
+    }
+    const handleScroll = () => setActionMenuId(null)
+    document.addEventListener('mousedown', handleClick)
+    window.addEventListener('scroll', handleScroll, true)
+    return () => {
+      document.removeEventListener('mousedown', handleClick)
+      window.removeEventListener('scroll', handleScroll, true)
+    }
+  }, [actionMenuId])
+
+  const openMenu = useCallback((moduleId: string, btnEl: HTMLButtonElement) => {
+    if (actionMenuId === moduleId) {
+      setActionMenuId(null)
+      return
+    }
+    const rect = btnEl.getBoundingClientRect()
+    setMenuPos({ top: rect.top - 4, left: rect.right })
+    setActionMenuId(moduleId)
+  }, [actionMenuId])
 
   // Group by language if vernacular
   const grouped = isVernacular
@@ -103,12 +132,16 @@ export default function TimelineTable({ project, modules, userRole }: TimelineTa
   }
 
   const getLatestFeedbackPending = (mod: Module): Version | null => {
-    // Find latest version that has delivered_at but no feedback_received_at
     const pending = mod.module_versions
       .filter(v => v.delivered_at && !v.feedback_received_at)
       .sort((a, b) => b.version_number - a.version_number)
     return pending[0] || null
   }
+
+  // Find the currently active module for the fixed menu
+  const activeModule = actionMenuId ? modules.find(m => m.id === actionMenuId) : null
+  const activeFeedbackPending = activeModule ? getLatestFeedbackPending(activeModule) : null
+  const activeLatestScorm = activeModule ? getLatestVersion(activeModule, 'scorm') : null
 
   return (
     <>
@@ -150,7 +183,6 @@ export default function TimelineTable({ project, modules, userRole }: TimelineTa
                 {mods.map((mod) => {
                   const latestStory = getLatestVersion(mod, 'story')
                   const latestScorm = getLatestVersion(mod, 'scorm')
-                  const feedbackPending = getLatestFeedbackPending(mod)
 
                   return (
                     <tr key={mod.id} className={styles.row}>
@@ -199,36 +231,14 @@ export default function TimelineTable({ project, modules, userRole }: TimelineTa
                       </td>
                       {canManage && (
                         <td className={styles.cellActions}>
-                          <div className={styles.actionWrapper}>
-                            <button
-                              className={styles.actionBtn}
-                              onClick={() => setActionMenuId(actionMenuId === mod.id ? null : mod.id)}
-                              disabled={isPending}
-                            >
-                              <Plus size={14} />
-                              <ChevronDown size={10} />
-                            </button>
-                            {actionMenuId === mod.id && (
-                              <div className={styles.actionMenu}>
-                                <button onClick={() => handleRecordVersion(mod.id, 'story')} className={styles.menuItem}>
-                                  <Package size={13} /> Record Story Version
-                                </button>
-                                {feedbackPending && (
-                                  <button onClick={() => handleRecordFeedback(feedbackPending.id)} className={styles.menuItem}>
-                                    <MessageSquare size={13} /> Record Feedback Received
-                                  </button>
-                                )}
-                                <button onClick={() => handleRecordVersion(mod.id, 'scorm')} className={styles.menuItem}>
-                                  <Package size={13} /> Record SCORM Version
-                                </button>
-                                {mod.scorm_status !== 'approved' && latestScorm && (
-                                  <button onClick={() => handleApproveScorm(mod.id)} className={styles.menuItem}>
-                                    <CheckCircle size={13} /> Approve SCORM
-                                  </button>
-                                )}
-                              </div>
-                            )}
-                          </div>
+                          <button
+                            className={styles.actionBtn}
+                            onClick={(e) => openMenu(mod.id, e.currentTarget)}
+                            disabled={isPending}
+                          >
+                            <Plus size={14} />
+                            <ChevronDown size={10} />
+                          </button>
                         </td>
                       )}
                     </tr>
@@ -239,6 +249,37 @@ export default function TimelineTable({ project, modules, userRole }: TimelineTa
           </tbody>
         </table>
       </div>
+
+      {/* Fixed-position Action Menu (rendered outside table wrapper) */}
+      {actionMenuId && activeModule && (
+        <div
+          ref={menuRef}
+          className={styles.actionMenu}
+          style={{
+            position: 'fixed',
+            top: menuPos.top,
+            left: menuPos.left,
+            transform: 'translate(-100%, -100%)',
+          }}
+        >
+          <button onClick={() => handleRecordVersion(activeModule.id, 'story')} className={styles.menuItem}>
+            <Package size={13} /> Record Story Version
+          </button>
+          {activeFeedbackPending && (
+            <button onClick={() => handleRecordFeedback(activeFeedbackPending.id)} className={styles.menuItem}>
+              <MessageSquare size={13} /> Record Feedback Received
+            </button>
+          )}
+          <button onClick={() => handleRecordVersion(activeModule.id, 'scorm')} className={styles.menuItem}>
+            <Package size={13} /> Record SCORM Version
+          </button>
+          {activeModule.scorm_status !== 'approved' && activeLatestScorm && (
+            <button onClick={() => handleApproveScorm(activeModule.id)} className={styles.menuItem}>
+              <CheckCircle size={13} /> Approve SCORM
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Module History Popup */}
       {selectedModule && (
