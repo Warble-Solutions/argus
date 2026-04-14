@@ -17,6 +17,7 @@ interface ProjectActionsProps {
     description: string | null
     deadline: string
     status: string
+    is_vernacular?: boolean
   }
 }
 
@@ -166,6 +167,15 @@ export default function ProjectActions({ project }: ProjectActionsProps) {
                 <option value="archived">Archived</option>
               </select>
             </div>
+          </div>
+
+          {/* Vernacular Toggle */}
+          <div className="input-group">
+            <label style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', cursor: 'pointer' }}>
+              <input type="checkbox" name="is_vernacular" value="true" defaultChecked={project.is_vernacular} style={{ width: 16, height: 16, accentColor: 'var(--color-accent-purple)' }} />
+              <span className="input-label" style={{ margin: 0 }}>🌐 Vernacular Project</span>
+            </label>
+            <span className="text-tiny text-dim" style={{ marginTop: 2 }}>Enable to set language per module</span>
           </div>
         </form>
       </Modal>

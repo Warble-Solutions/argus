@@ -49,6 +49,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
           description: project.description,
           deadline: project.deadline,
           status: project.status,
+          is_vernacular: project.is_vernacular,
         }} />
       </div>
 

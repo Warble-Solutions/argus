@@ -1,0 +1,88 @@
+.section {
+  margin-bottom: var(--space-8);
+}
+
+.sectionTitle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
+  margin-bottom: var(--space-4);
+  color: var(--color-text-primary);
+}
+
+.sectionToggle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  background: none;
+  border: none;
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  padding: var(--space-2) 0;
+  transition: color var(--transition-fast);
+}
+
+.sectionToggle:hover {
+  color: var(--color-text-primary);
+}
+
+.projectCard {
+  position: relative;
+  overflow: hidden;
+}
+
+.cardContent {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.cardTop {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.arrow {
+  margin-left: auto;
+  opacity: 0;
+  transition: all var(--transition-fast);
+  color: var(--color-text-muted);
+}
+
+.projectCard:hover .arrow {
+  opacity: 1;
+  transform: translateX(2px);
+}
+
+.projectName {
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.cardStats {
+  display: flex;
+  justify-content: space-between;
+  margin-top: var(--space-1);
+}
+
+.progressBar {
+  height: 3px;
+  border-radius: 2px;
+  background: var(--color-bg-tertiary);
+  margin-top: var(--space-2);
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--color-accent-blue), var(--color-accent-cyan));
+  transition: width 0.3s ease;
+}

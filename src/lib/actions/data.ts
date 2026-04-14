@@ -15,6 +15,7 @@ export async function createProject(formData: FormData) {
     client_email: (formData.get('client_email') as string) || null,
     description: (formData.get('description') as string) || null,
     deadline: formData.get('deadline') as string,
+    is_vernacular: formData.get('is_vernacular') === 'true',
     created_by: user.id,
   }).select('id, name, client_name').single()
 
@@ -74,6 +75,9 @@ export async function updateProject(projectId: string, formData: FormData) {
 
   const status = formData.get('status') as string | null
   if (status) updates.status = status
+
+  const is_vernacular = formData.get('is_vernacular')
+  if (is_vernacular !== null) updates.is_vernacular = is_vernacular === 'true'
 
   if (Object.keys(updates).length === 0) {
     throw new Error('No fields to update')
@@ -156,6 +160,8 @@ export async function createModule(formData: FormData) {
     description: (formData.get('description') as string) || null,
     assigned_to: (formData.get('assigned_to') as string) || null,
     deadline: formData.get('deadline') as string,
+    language: (formData.get('language') as string) || null,
+    remark: (formData.get('remark') as string) || null,
   }).select('id').single()
 
   if (error) throw new Error(error.message)
@@ -207,6 +213,12 @@ export async function updateModule(moduleId: string, formData: FormData) {
 
   const status = formData.get('status') as string | null
   if (status) updates.status = status
+
+  const language = formData.get('language')
+  if (language !== null) updates.language = (language as string) || null
+
+  const remark = formData.get('remark')
+  if (remark !== null) updates.remark = (remark as string) || null
 
   if (Object.keys(updates).length === 0) {
     throw new Error('No fields to update')
@@ -918,4 +930,122 @@ export async function getModuleActivity(moduleId: string) {
 
   if (error) return []
   return data || []
+}
+
+// ═══ Timeline ═══
+
+export async function getProjectTimeline(projectId: string) {
+  const supabase = await createClient()
+
+  const { data: modules, error } = await supabase
+    .from('modules')
+    .select('*, module_versions(*)')
+    .eq('project_id', projectId)
+    .order('module_number', { ascending: true })
+
+  if (error) throw new Error(error.message)
+  return modules || []
+}
+
+export async function getModuleVersionHistory(moduleId: string) {
+  const supabase = await createClient()
+
+  const { data: versions, error } = await supabase
+    .from('module_versions')
+    .select('*')
+    .eq('module_id', moduleId)
+    .order('type', { ascending: true })
+    .order('version_number', { ascending: true })
+
+  if (error) return []
+  return versions || []
+}
+
+export async function recordVersionDelivered(moduleId: string, type: 'story' | 'scorm') {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
+
+  // Get next version number for this type
+  const { data: existing } = await supabase
+    .from('module_versions')
+    .select('version_number')
+    .eq('module_id', moduleId)
+    .eq('type', type)
+    .order('version_number', { ascending: false })
+    .limit(1)
+
+  const nextVersion = (existing && existing.length > 0) ? existing[0].version_number + 1 : 1
+
+  const { error } = await supabase.from('module_versions').insert({
+    module_id: moduleId,
+    version_number: nextVersion,
+    type,
+    delivered_at: new Date().toISOString(),
+  })
+
+  if (error) throw new Error(error.message)
+
+  // Update module's current_version if story type
+  if (type === 'story') {
+    await supabase.from('modules').update({ current_version: nextVersion }).eq('id', moduleId)
+  } else {
+    await supabase.from('modules').update({ scorm_status: 'in_progress' }).eq('id', moduleId)
+  }
+
+  // Get module for revalidation
+  const { data: mod } = await supabase.from('modules').select('project_id').eq('id', moduleId).single()
+  if (mod) {
+    revalidatePath(`/timeline/${mod.project_id}`)
+    revalidatePath(`/projects/${mod.project_id}/modules/${moduleId}`)
+    await logActivity(`${type}_delivered`, `Delivered ${type} v${nextVersion}`, { projectId: mod.project_id, moduleId })
+  }
+}
+
+export async function recordFeedbackReceived(versionId: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
+
+  const { data: version } = await supabase
+    .from('module_versions')
+    .select('module_id, version_number, type')
+    .eq('id', versionId)
+    .single()
+
+  if (!version) throw new Error('Version not found')
+
+  const { error } = await supabase
+    .from('module_versions')
+    .update({ feedback_received_at: new Date().toISOString() })
+    .eq('id', versionId)
+
+  if (error) throw new Error(error.message)
+
+  // Get module for revalidation
+  const { data: mod } = await supabase.from('modules').select('project_id').eq('id', version.module_id).single()
+  if (mod) {
+    revalidatePath(`/timeline/${mod.project_id}`)
+    revalidatePath(`/projects/${mod.project_id}/modules/${version.module_id}`)
+    await logActivity('feedback_received', `Received feedback on ${version.type} v${version.version_number}`, { projectId: mod.project_id, moduleId: version.module_id })
+  }
+}
+
+export async function markScormApproved(moduleId: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
+
+  const { error } = await supabase
+    .from('modules')
+    .update({ scorm_status: 'approved', scorm_approved_at: new Date().toISOString() })
+    .eq('id', moduleId)
+
+  if (error) throw new Error(error.message)
+
+  const { data: mod } = await supabase.from('modules').select('project_id, title').eq('id', moduleId).single()
+  if (mod) {
+    revalidatePath(`/timeline/${mod.project_id}`)
+    await logActivity('scorm_approved', `SCORM approved for "${mod.title}"`, { projectId: mod.project_id, moduleId })
+  }
 }

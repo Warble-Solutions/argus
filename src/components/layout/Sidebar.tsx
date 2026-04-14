@@ -17,6 +17,7 @@ import {
   ChevronRight,
   Eye,
   LogOut,
+  Clock,
 } from 'lucide-react'
 import { getInitials } from '@/lib/utils'
 import { signOut } from '@/lib/actions/auth'
@@ -36,6 +37,7 @@ const navItems: NavItem[] = [
   { label: 'Dashboard', href: '/', icon: <LayoutDashboard size={20} /> },
   { label: 'Oracle', href: '/chat', icon: <Sparkles size={20} /> },
   { label: 'Projects', href: '/projects', icon: <FolderKanban size={20} /> },
+  { label: 'Timeline', href: '/timeline', icon: <Clock size={20} /> },
   { label: 'Approvals', href: '/approvals', icon: <ClipboardCheck size={20} /> },
   { label: 'Files', href: '/files', icon: <FileUp size={20} /> },
   { label: 'Emails', href: '/emails', icon: <Mail size={20} />, roles: ['admin', 'manager', 'employee'] },

@@ -233,6 +233,15 @@ export default function ProjectsClient({ projects, teamMembers }: ProjectsClient
             <DateTimePicker id="project-deadline" name="deadline" className="input-field" required />
           </div>
 
+          {/* Vernacular Toggle */}
+          <div className="input-group">
+            <label style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', cursor: 'pointer' }}>
+              <input type="checkbox" name="is_vernacular" value="true" style={{ width: 16, height: 16, accentColor: 'var(--color-accent-purple)' }} />
+              <span className="input-label" style={{ margin: 0 }}>🌐 Vernacular Project</span>
+            </label>
+            <span className="text-tiny text-dim" style={{ marginTop: 2 }}>Enable to set language for each module</span>
+          </div>
+
           {/* Searchable Lead Selector */}
           <div className="input-group" ref={dropdownRef}>
             <label className="input-label">
