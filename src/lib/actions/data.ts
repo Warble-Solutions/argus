@@ -308,6 +308,7 @@ export async function createTask(formData: FormData) {
   if (!user) throw new Error('Not authenticated')
 
   const moduleId = formData.get('module_id') as string
+  const parentTaskId = (formData.get('parent_task_id') as string) || null
 
   const { error } = await supabase.from('tasks').insert({
     module_id: moduleId,
@@ -318,6 +319,7 @@ export async function createTask(formData: FormData) {
     assigned_to: (formData.get('assigned_to') as string) || null,
     due_date: (formData.get('due_date') as string) || null,
     created_by: user.id,
+    parent_task_id: parentTaskId,
   })
 
   if (error) throw new Error(error.message)
@@ -456,6 +458,15 @@ export async function getTasksByModule(moduleId: string) {
 
   if (error) throw new Error(error.message)
   return data || []
+}
+
+export async function getSubtaskCount(parentTaskId: string) {
+  const supabase = await createClient()
+  const { count } = await supabase
+    .from('tasks')
+    .select('id', { count: 'exact', head: true })
+    .eq('parent_task_id', parentTaskId)
+  return count || 0
 }
 
 export async function updateTaskStatus(taskId: string, status: string) {

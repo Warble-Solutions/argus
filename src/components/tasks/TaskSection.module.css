@@ -290,3 +290,77 @@
   color: #f87171;
   font-size: var(--text-sm);
 }
+
+/* ═══ Sub-tasks ═══ */
+.subtaskWrapper {
+  display: flex;
+  flex-direction: column;
+}
+
+.subtaskToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--color-accent-blue);
+  font-size: 11px;
+  font-weight: var(--weight-medium);
+  cursor: pointer;
+  transition: color var(--transition-fast);
+}
+
+.subtaskToggle:hover {
+  color: var(--color-accent-purple);
+}
+
+.subtaskToggle svg {
+  transition: transform 0.2s ease;
+}
+
+.subtaskToggle.expanded svg {
+  transform: rotate(90deg);
+}
+
+.subtaskChildren {
+  margin-left: 20px;
+  padding-left: var(--space-3);
+  border-left: 2px solid var(--color-border);
+}
+
+.subtaskChildren .taskItem {
+  padding: var(--space-2) 0;
+}
+
+.subtaskChildren .taskItem:last-child {
+  border-bottom: none;
+}
+
+.addSubtaskBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 0;
+  margin-left: 20px;
+  padding-left: var(--space-3);
+  border: none;
+  background: transparent;
+  color: var(--color-text-dim);
+  font-size: 11px;
+  cursor: pointer;
+  transition: color var(--transition-fast);
+}
+
+.addSubtaskBtn:hover {
+  color: var(--color-accent-blue);
+}
+
+.subtaskCount {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 11px;
+  color: var(--color-text-dim);
+  font-weight: var(--weight-medium);
+}
