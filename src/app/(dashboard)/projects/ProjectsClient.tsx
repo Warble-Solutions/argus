@@ -229,8 +229,8 @@ export default function ProjectsClient({ projects, teamMembers }: ProjectsClient
             <textarea id="project-desc" name="description" className="input-field" placeholder="Brief project description..." rows={3} />
           </div>
           <div className="input-group">
-            <label htmlFor="project-deadline" className="input-label">Deadline *</label>
-            <DateTimePicker id="project-deadline" name="deadline" className="input-field" required />
+            <label htmlFor="project-deadline" className="input-label">Deadline</label>
+            <DateTimePicker id="project-deadline" name="deadline" className="input-field" />
           </div>
 
           {/* Vernacular Toggle */}

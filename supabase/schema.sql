@@ -46,7 +46,7 @@ CREATE TABLE public.projects (
   client_email TEXT,
   description TEXT,
   status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'on_hold', 'completed')),
-  deadline TIMESTAMPTZ NOT NULL,
+  deadline TIMESTAMPTZ,
   modules_count INT NOT NULL DEFAULT 0,
   completed_modules INT NOT NULL DEFAULT 0,
   progress INT NOT NULL DEFAULT 0,
@@ -208,10 +208,10 @@ CREATE POLICY "Projects viewable by all authenticated"
   TO authenticated
   USING (true);
 
-CREATE POLICY "Managers can create projects"
+CREATE POLICY "Managers and employees can create projects"
   ON public.projects FOR INSERT
   TO authenticated
-  WITH CHECK (public.get_user_role() IN ('admin', 'manager'));
+  WITH CHECK (public.get_user_role() IN ('admin', 'manager', 'employee'));
 
 CREATE POLICY "Managers can update projects"
   ON public.projects FOR UPDATE

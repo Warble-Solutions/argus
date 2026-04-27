@@ -68,10 +68,14 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
         </div>
         <div className={styles.statItem}>
           <span className="text-tiny text-dim">Deadline</span>
-          <span className={`text-small ${getDeadlineStatus(project.deadline) === 'overdue' ? styles.overdue : ''}`}>
-            <Calendar size={13} style={{ display: 'inline', verticalAlign: '-2px', marginRight: '4px' }} />
-            {formatDate(project.deadline)}
-          </span>
+          {project.deadline ? (
+            <span className={`text-small ${getDeadlineStatus(project.deadline) === 'overdue' ? styles.overdue : ''}`}>
+              <Calendar size={13} style={{ display: 'inline', verticalAlign: '-2px', marginRight: '4px' }} />
+              {formatDate(project.deadline)}
+            </span>
+          ) : (
+            <span className="text-small text-muted">No deadline</span>
+          )}
         </div>
         <div className={styles.statItem}>
           <span className="text-tiny text-dim">Modules</span>

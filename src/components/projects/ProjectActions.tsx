@@ -144,13 +144,12 @@ export default function ProjectActions({ project }: ProjectActionsProps) {
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-4)' }}>
             <div className="input-group">
-              <label htmlFor="edit-deadline" className="input-label">Deadline *</label>
+              <label htmlFor="edit-deadline" className="input-label">Deadline</label>
               <DateTimePicker
                 id="edit-deadline"
                 name="deadline"
                 className="input-field"
                 defaultValue={project.deadline}
-                required
               />
             </div>
             <div className="input-group">

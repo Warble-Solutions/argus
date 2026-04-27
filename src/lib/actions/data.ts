@@ -14,7 +14,7 @@ export async function createProject(formData: FormData) {
     client_name: formData.get('client_name') as string,
     client_email: (formData.get('client_email') as string) || null,
     description: (formData.get('description') as string) || null,
-    deadline: formData.get('deadline') as string,
+    deadline: (formData.get('deadline') as string) || null,
     is_vernacular: formData.get('is_vernacular') === 'true',
     created_by: user.id,
   }).select('id, name, client_name').single()
